@@ -14,7 +14,7 @@ import { getSliderImages, uploadSliderImage, updateSliderImage, deleteSliderImag
 import { uploadImageSlider } from "../middlewares/uploadImageSlider.js"; //Subir imagen al slider
 import { uploadUserDocuments } from "../middlewares/uploadDocuments.js"; //para validaciónes de archivos
 import { deleteDocumento, getAllDocuments, updateDocumentoByAdmin, viewDocumentAsAdmin } from "../controllers/documentosAdmin.controller.js"; //CRUD documentos
-import { getDocumentosByUserId, updateDocumentosByUser } from "../controllers/DocumentosUser.controller.js";
+import { getDocumentosByUserId, updateDocumentosByUser } from "../controllers/documentosUser.controller.js";
 import { viewUserDocument } from "../controllers/documentos.view.controller.js";
 import { isAdmin } from "../middlewares/isAdmin.js"; //validación de tipo de usuario
 import { getUsuariosConEspecialidades, setEspecialidadesUsuario, deleteEspecialidadDeUsuario } from '../models/especialidades.model.js'; //Asignación de especialidades
