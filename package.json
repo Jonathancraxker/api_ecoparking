@@ -1,12 +1,13 @@
 {
-  "name": "prueba",
+  "name": "api_cienqro",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -19,10 +20,12 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "google-auth-library": "^9.15.1",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.0",
     "mysql2": "^3.13.0",
-    "nodemon": "^3.1.9",
     "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "nodemon": "3.1.9"
   }
 }

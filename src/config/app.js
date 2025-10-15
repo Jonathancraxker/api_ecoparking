@@ -1,7 +1,10 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import adminRoutes from '../routes/admin.routes.js';
+import path from 'path';
+import adminRoutes from '../routes/admin.routes.js'; // Asegúrate de que este archivo incluya /slider
+
+
 
 // Iniciando el servidor
 const app = express();
@@ -9,23 +12,31 @@ const app = express();
 // Middleware para convertir los req body para que el backend entienda con express los json
 app.use(express.json());
 
-// Configuración de CORS
+// Configuración CORS para múltiples orígenes
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'https://admin-dashboard-one-sandy-38.vercel.app', 'https://cienqro.mx'];
+
 app.use(
-    cors({
-        origin: [
-            'http://localhost:5173', 
-            'http://localhost:8081',
-            'https://smartparking-ten.vercel.app',
-            'https://smartparking-jonathans-projects-27d0782c.vercel.app',
-            'https://smartparking-jonathancraxker-jonathans-projects-27d0782c.vercel.app'
-        ],
-        credentials: true,
-    })
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('No autorizado por CORS'));
+      }
+    },
+    credentials: true, // Para permitir cookies/sesiones
+  })
 );
 
-app.use(cookieParser()); // Manejo de cookies
+// Manejo de cookies en los navegadores
+app.use(cookieParser());
+
+// Para archivos de la carpeta uploads
+app.use('/uploads', express.static('uploads'));
 
 // Ruta principal de las APIs
-app.use('/parking', adminRoutes);
+app.use('/cienqro', adminRoutes); 
 
 export default app;
+
+//By Jonathan Cruz

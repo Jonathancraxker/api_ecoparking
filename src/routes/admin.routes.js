@@ -1,292 +1,159 @@
 import { Router } from "express";
-import { OAuth2Client } from "google-auth-library"; // Importar Google OAuth2Client
-import jwt from "jsonwebtoken"; // Importar jsonwebtoken
-import bwipjs from "bwip-js"; //Generción de código de barras para móvil
 import { validateMid } from "../middlewares/validarMiddleware.js";
-import { registarUsuario, loginUsuario, logout, profile, registarUsuarioCRUD } from "../controllers/usuarios.controller.js";
-import { loginSchema, registroSchema, updateSchema } from "../schemas/usuarios.schemas.js";
-import { getUsuarios, getUsersId, deleteUserById, updateUserById, crearUsuarioGoogle, updateUserByIdCRUD, verificarCorreo } from "../models/usuarios.model.js"; // Importar las nuevas funciones
-import { authToken } from "../middlewares/validarToken.js";
-import { getRegistros, getRegistroById, createRegistro, registrarSalida, deleteRegistro, getRegistrosActivos, getRegistrosPendientesByUsuario, getRegistrosById_Usuario, cancelarReservaId } from "../models/registros.model.js";
-
+import { registarUsuario, loginUsuario, logout, profile, status, registarUsuarioCRUD } from "../controllers/usuarios.controller.js"; //Login y Registro
+import { loginSchema, registroSchema, updatePasswordSchema, updateSchema } from "../schemas/usuarios.schemas.js"; //Validación de datos
+import { getUsuarios, getUsersId, deleteUserById, updateUserByIdCRUD } from "../models/usuarios.model.js"; //CRUD usuarios
+import { authToken } from "../middlewares/validarToken.js"; //verificación de token existente
+import { deleteEspecialidadById, getEspecialidades, registrarEspecialidad, updateEspecialidadById } from "../models/peritos.model.js"; //CRUD especialidades
+import { deleteEventoById, getAllEventos, getEventos, registrarEvento, updateEventoById } from "../models/eventos.model.js"; //CRUD eventos
+import { deleteLibro, getBiblioteca, registrarLibro, updateLibro } from "../models/biblioteca.model.js"; //CRUD biblioteca
+import { upload } from "../middlewares/upload.js"; // middleware de multer para actualizar imagen
+import { updateCiudad, updateEmpresa, updateImagePerfil, updateUserById, updateUserByPassword } from "../models/profile.model.js"; //Perfil de usuario
+import { uploadImageProfile } from "../middlewares/uploadImagenProfile.js"; //Imagen de perfil
+import { getSliderImages, uploadSliderImage, updateSliderImage, deleteSliderImage} from '../models/slider.model.js'; //CRUD Slider
+import { uploadImageSlider } from "../middlewares/uploadImageSlider.js"; //Subir imagen al slider
+import { uploadUserDocuments } from "../middlewares/uploadDocuments.js"; //para validaciónes de archivos
+import { deleteDocumento, getAllDocuments, updateDocumentoByAdmin, viewDocumentAsAdmin } from "../controllers/documentosAdmin.controller.js"; //CRUD documentos
+import { getDocumentosByUserId, updateDocumentosByUser } from "../controllers/DocumentosUser.controller.js";
+import { viewUserDocument } from "../controllers/documentos.view.controller.js";
+import { isAdmin } from "../middlewares/isAdmin.js"; //validación de tipo de usuario
+import { getUsuariosConEspecialidades, setEspecialidadesUsuario, deleteEspecialidadDeUsuario } from '../models/especialidades.model.js'; //Asignación de especialidades
+import { getComisiones, createComision, updateComision, deleteComision } from '../models/comisiones.js'; //CRUD comisiones
+import { getUsuariosConComisiones, setComisionesUsuario } from '../models/comisiones_usuario.js'; //Asignación de comisiones por usuario
+import { getComisionesPerfil, getEspecialidadesPerfil } from "../models/obtener_comisiones_especialidades.model.js"; //Para obtener especialidades y comisiones por usuario autenticado
 
 const router = Router();
 
-// Rutas para login tradicional
-router.post('/usuarios/registro', validateMid(registroSchema), registarUsuario);
-router.post('/usuarios/login', validateMid(loginSchema), loginUsuario);
+// Rutas para Registro y login (inicio de sesión)
+router.post('/usuarios/registro', validateMid(registroSchema), registarUsuario); //Registro de un nuevo usuario
+router.post('/usuarios/login', validateMid(loginSchema), loginUsuario); //Inicio de sesión
 router.post('/logout', logout); // Cerrar sesión eliminando token de cookies
+
+//obtener datos de usuario logeado (perfil de usuario)
 router.get('/usuarios/perfil', authToken, profile); // Protección de ruta con authToken validando el token existente
 
+router.get('/usuarios/perfil/especialidades', authToken, getEspecialidadesPerfil); //Obtención de especialidades por usuario
+router.get('/usuarios/perfil/comisiones', authToken, getComisionesPerfil); //Obtención de comisiones por usuario
+
+// Ruta para verificar la sesión del usuario a través de la cookie
+router.get('/usuarios/status', authToken, status); 
+
 // CRUD de usuarios
-router.get('/usuarios/', authToken, getUsuarios);
-router.get('/usuarios/:id', authToken, getUsersId);
-router.post('/usuarios/', registarUsuarioCRUD);
-router.patch('/usuarios/update/:id', authToken, updateUserById); //para editar en móvil campo nombre y correo
-router.patch('/usuarios/:id', authToken, validateMid(updateSchema), updateUserByIdCRUD); //para editar en web más campos
-router.delete('/usuarios/:id', authToken, deleteUserById);
+router.get('/usuarios/', getUsuarios); //Obtener todos los usuarios
+router.get('/usuarios/:id', getUsersId); //Obtener información de un usuario por id
+router.post('/usuarios/', authToken, registarUsuarioCRUD); //Registrar un usuario desde administrador
+router.patch('/usuarios/:id', authToken, validateMid(updateSchema), updateUserByIdCRUD); //Para modificar datos de usuario
+router.delete('/usuarios/:id', authToken, deleteUserById); //Eliminar usuario
 
-// Configurar el cliente de Google OAuth
-const client = new OAuth2Client("502548877339-iau4hvt7nlhm3p9d31q33960q1c10524.apps.googleusercontent.com");
+//Profile (para obtener info como: imagenes, especialidades, comisiones por usuario)
+router.patch('/usuarios/update/:id', authToken, updateUserById); //para editar solo los campos en perfil (nombre, apellidos, correo, contraseña, curp, rfc)
+router.put('/usuarios/update/:id', authToken, validateMid(updatePasswordSchema), updateUserByPassword); //para editar solo la contraseña, para profile y CRUD
+router.put(
+  '/usuarios/update/imagen/:id',
+  uploadImageProfile.fields([
+    { name: 'imagen', maxCount: 1 }
+  ]),
+  updateImagePerfil
+); //Actualizar imagen de perfil
+router.put('/usuarios/update/ciudad/:id', authToken, updateCiudad); //Actualizar ciudad
+router.put('/usuarios/update/empresa/:id', authToken, updateEmpresa); //Actualizar empresa
 
-// Ruta para autenticación con Google
-router.post("/auth/google", async (req, res) => {
-    const { token } = req.body;
+//Peritos
+router.get('/peritos/', getEspecialidades); //Obtener especialidades
+router.patch('/peritos/:id', updateEspecialidadById); //actualizar especialidad
+router.delete('/peritos/:id', deleteEspecialidadById); //eliminar especialidad
 
-    try {
-        // Verificar el token de Google
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: "502548877339-iau4hvt7nlhm3p9d31q33960q1c10524.apps.googleusercontent.com",
-        });
+//Biblioteca
+router.get('/biblioteca/', getBiblioteca); //obtener libro
+router.post(
+  '/biblioteca/',
+  upload.fields([
+    { name: 'archivo_pdf', maxCount: 1 },
+    { name: 'imagen', maxCount: 1 }
+  ]),
+  registrarLibro
+); //registrar libro
 
-        const payload = ticket.getPayload();
-        const { email, name } = payload;
+router.patch(
+  '/biblioteca/:id',
+  upload.fields([
+    { name: 'archivo_pdf', maxCount: 1 },
+    { name: 'imagen', maxCount: 1 }
+  ]),
+  updateLibro
+); //actualizar libro
 
-        // Validar si el usuario ya existe en la base de datos
-        let usuario = await verificarCorreo(email);
+router.delete('/biblioteca/:id', deleteLibro); //eliminar libro
 
-        // Si el usuario no existe, créalo
-        if (!usuario) {
-            const userId = await crearUsuarioGoogle({ email, name });
-            usuario = await verificarCorreo(email); // Obtén el usuario recién creado
-        }
+//Eventos
+router.get('/eventos/user', authToken, getEventos); //obtener eventos por filtro de tipo usuario al iniciar sesión y obtener el tipo a través del jwt decodeado
+router.get('/eventos/', getAllEventos) //Para obtener todos los eventos
+router.post('/eventos/', authToken, registrarEvento); //registrar evento
+router.patch('/eventos/:id', authToken, updateEventoById); //actualizar evento
+router.delete('/eventos/:id', authToken, deleteEventoById); //eliminar evento
 
-        // Generar un token JWT para tu aplicación
-        const userToken = jwt.sign({ id: usuario.id, email, name }, "tokenrandom", { expiresIn: "1d" });
+//Slider
+router.get('/slider/', getSliderImages); //obtener imagen del slider (carrusel)
+router.post('/slider/upload', uploadImageSlider.single('image'), uploadSliderImage); //subir imagen del slider (carrusel)
+router.put('/slider/update', uploadImageSlider.single('newImage'), updateSliderImage); //actualizar imagen del slider (carrusel)
+router.delete('/slider/delete', deleteSliderImage); //eliminar imagen del slider (carrusel)
 
-        // Enviar el token JWT al frontend
-        res.json({ token: userToken });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("Error en la autenticación con Google");
-    }
-});
+// Especialidades por usuario 
+router.get('/usuarios-especialidades', getUsuariosConEspecialidades); //obtener especialidades
+router.put('/usuarios/:idUsuario/especialidades', setEspecialidadesUsuario); //actualizar especialidades de un usuario
+router.delete('/usuarios/:idUsuario/especialidades/:idEspecialidad', deleteEspecialidadDeUsuario); //eliminar especialidad de un usuario
 
+// Comisiones (CRUD para admin)
+router.get('/comisiones', getComisiones); //obtener comisiones
+router.post('/comisiones', createComision); //registrar comisión
+router.put('/comisiones/:id_comision', updateComision); //actualizar comisión
+router.delete('/comisiones/:id_comision', deleteComision); //eliminar comisión
 
+// Comisiones por usuario 
+router.get('/usuarios-comisiones', getUsuariosConComisiones); //obtener comisiones de un usuario
+router.put('/usuarios/:idUsuario/comisiones', setComisionesUsuario); //Actualizar comisión de algún usuario
 
-// Rutas para registros de estacionamiento
-router.get('/registros/', async (req, res) => {
-    try {
-        const registros = await getRegistros();
-        res.status(200).json(registros);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+//Documentos
+router.get('/documentos', authToken, isAdmin, getAllDocuments); //obtener documentos
+router.get(
+    '/documentos/admin/view/:userId/:docType', 
+    authToken, 
+    isAdmin, 
+    viewDocumentAsAdmin
+); //obtener todos los documentos, solo para administrador
 
-//obtener registro por cb (codigo de barras), se puede cambiar por id
-router.get('/registros/:cb', async (req, res) => {
-    try {
-        const { cb } = req.params;
-        const registro = await getRegistroById(cb);
-        res.status(200).json(registro);
-    } catch (error) {
-        if (error.message === "Registro no encontrado") {
-            res.status(404).json({ message: error.message });
-        } else {
-            res.status(500).json({ message: error.message });
-        }
-    }
-});
+router.patch('/documentos/:id', // actualizar documento, :id_usuario es el ID del usuario al que pertenece el documento
+    authToken, 
+    isAdmin,
+    uploadUserDocuments.fields([ // Los campos que son recibidos para los documentos
+        { name: 'curp', maxCount: 1 }, { name: 'cv', maxCount: 1 }, { name: 'cedula', maxCount: 1 },
+        { name: 'titulo', maxCount: 1 }, { name: 'comprobante_domicilio', maxCount: 1 }, { name: 'csf', maxCount: 1 },
+        { name: 'ine', maxCount: 1 }, { name: 'credencial', maxCount: 1 }
+    ]),
+    updateDocumentoByAdmin
+); 
 
-//para registrar la entrada de un vehiculo
-router.post('/registros/', async (req, res) => {
-    try {
-        const { matricula, cajon_id, fecha, entrada, tipo, usuario_id } = req.body;
-
-        if (!fecha || !entrada) {
-            throw new Error('Fecha y hora de entrada son requeridas');
-        }
-
-        const registroId = await createRegistro({
-            matricula,
-            cajon_id,
-            fecha,
-            entrada,
-            tipo,
-            usuario_id
-        });
-
-        res.status(201).json({
-            id: registroId,
-            message: "Registro creado exitosamente",
-            usuario_id
-        });
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-
-//proceso de salida, se actualiza el campo salida (hora), pago (MXN) y status (pagado) por medio
-//de la busqueda del cb y actualizando estos datos para desocupar el cajon y la fecha
-router.put('/registros/:cb', async (req, res) => {
-    try {
-        const { cb } = req.params;
-        const { salida, pago, status, cajon_id } = req.body;
-
-        if (!salida) {
-            throw new Error('Hora de salida es requerida');
-        }
-
-        const registro = await registrarSalida(cb, salida, pago, status, cajon_id);
-        res.status(200).json(registro);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-// Obtener registros por usuario y estado "Pendiente" para móvil
-// Validación para que si se tiene una(s) reserva(s) pendiente(s) no deje reservar hasta que cambie 
-// status a Pagado o Cancelado
-router.get('/registros/usuario/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        if (!id) {
-            return res.status(400).json({
-                error: 'Se requiere el ID de usuario'
-            });
-        }
-
-        const registros = await getRegistrosPendientesByUsuario(id);
-
-        res.json({
-            count: registros.length,
-            data: registros
-        });
-    } catch (error) {
-        console.error('Error al obtener registros pendientes por usuario:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
-    }
-});
-
-// Obtener TODOS los registros de un usuario en base a su usuario_id de la tabla registros
-//Obtiene el registro más actual y que esté pendiente
-//Ya esta validado que no pueda hacer 2 registros/reservas un usuario en móvil, así que no hay problema
-router.get('/registros/userbyid/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        if (!id) {
-            return res.status(400).json({
-                error: 'Se requiere el ID de usuario'
-            });
-        }
-
-        const registro = await getRegistrosById_Usuario(id);
-
-        if (!registro) {
-            return res.status(404).json({
-                success: true,
-                message: 'No se encontraron registros pendientes para este usuario',
-                data: null
-            });
-        }
-
-        res.json({
-            success: true,
-            data: registro
-        });
-    } catch (error) {
-        console.error('Error al obtener registro reciente pendiente:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
-    }
-});
-
-/**
- * @route PATCH /parking/registros/userbyid/:id
- * @description Actualiza el estado de la reserva a Cancelado
- * @access Private
- */
-router.patch('/registros/userbyid/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const cancelado = await cancelarReservaId(id);
-
-        if (!cancelado) {
-            return res.status(404).json({
-                success: false,
-                message: 'No se encontró reserva pendiente para este usuario'
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Reserva cancelada exitosamente'
-        });
-    } catch (error) {
-        console.error('Error en endpoint de cancelación:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
-    }
-});
-
-// NO BORRAR !!! ES PARA GENERAR LOD CÓDIGOS DE BARRAS EN MÓVIL, esta api se consume en móvil (QRCODESCREEN.Tsx).
-router.get('/barcode', async (req, res) => {
-    try {
-        const { value } = req.query;
-
-        bwipjs.toBuffer({
-            bcid: 'code128',       // Tipo de código de barras
-            text: value,           // Texto a codificar
-            scale: 3,              // Escala 3x
-            height: 10,            // Altura en mm
-            includetext: true,     // Mostrar texto debajo
-            textxalign: 'center',  // Centrar texto
-        }, (err, png) => {
-            if (err) {
-                return res.status(500).send('Error generando código de barras');
-            }
-            res.type('image/png');
-            res.send(png);
-        });
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).send('Error interno');
-    }
-});
+router.delete('/documentos/:id_usuario/:docType', // eliminar documento
+    authToken, 
+    isAdmin,
+    deleteDocumento
+); 
 
 
-// Mantén el endpoint existente para registros pendientes
-router.get('/usuario/:id', async (req, res) => {
-    // ... (tu código existente para registros pendientes)
-});
+//Para documentos por usuario (con sesión iniciada tomando su ID y obteniendo sus datos)
+router.get('/documentos/user', authToken, getDocumentosByUserId);
+router.get('/documentos/view/:docType', authToken, viewUserDocument);
 
-//elimminar registro a través del id
-router.delete('/registros/:id', authToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const success = await deleteRegistro(id);
-        if (success) {
-            res.status(200).json({ message: "Registro eliminado exitosamente" });
-        } else {
-            res.status(404).json({ message: "Registro no encontrado" });
-        }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.patch(
+    '/documentos/:docType', 
+    authToken,              
+    uploadUserDocuments.fields([
+        { name: 'curp', maxCount: 1 }, { name: 'cv', maxCount: 1 }, { name: 'cedula', maxCount: 1 },
+        { name: 'titulo', maxCount: 1 }, { name: 'comprobante_domicilio', maxCount: 1 }, { name: 'csf', maxCount: 1 },
+        { name: 'ine', maxCount: 1 }, { name: 'credencial', maxCount: 1 } 
+    ]),
+    updateDocumentosByUser
+); //Solo se utiliza si se implementa el subir documentos por usuario, ademas del administrador.
 
-//para obtener los registros que no han salido del estacionamiento
-//aún no esta en uso este endpoint, podría emplearse a futuro
-router.get('/registros/activos', async (req, res) => {
-    try {
-        const registros = await getRegistrosActivos();
-        res.status(200).json(registros);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
 
 export default router;

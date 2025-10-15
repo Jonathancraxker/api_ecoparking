@@ -33,12 +33,6 @@ export const loginSchema = z.object({
     }).nonempty('La contraseña no puede estar vacía')
 })
 
-// {
-//     "nombre": "eleme",
-//     "correo": "eseleme@gmail.com",
-//     "tipo": "3",
-//     "estado": "activo"
-// }
 
 export const updateSchema = z.object({
     nombre: z.string ({
@@ -50,10 +44,18 @@ export const updateSchema = z.object({
     .email({
         message: 'correo no valido'
     }),
-    tipo: z.number ({
+    tipo: z.string ({
         required_error: 'El tipo es requerido'
     }),
     estado: z.string ({
         required_error: 'El estado es requerido'
     }).nonempty('El estado no puede estar acío')
+})
+
+export const updatePasswordSchema = z.object({
+    contrasena: z.string({
+        required_error:'La contraseña es requerida'
+    }).min(8,{
+        message:'La contraseña debe tener minimo 8 caracteres'
+    })
 })
