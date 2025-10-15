@@ -27,8 +27,6 @@ export const registrarEspecialidad = async (req, res) => {
             res.status(201).json({
             message: "Especialidad registrada exitosamente",
             id: result.insertId,
-            // Pos si se quiere mostrar al cliente: especialidad: especialidad,
-            // Pos si se quiere mostrar al cliente: descripcion: descripcion
         }); 
     } catch (error) {
         console.error("Error al registrar especialidad:", error);

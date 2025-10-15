@@ -60,6 +60,7 @@ router.put('/usuarios/update/empresa/:id', authToken, updateEmpresa); //Actualiz
 
 //Peritos
 router.get('/peritos/', getEspecialidades); //Obtener especialidades
+router.post('/peritos/', registrarEspecialidad); //Registrar especialidades
 router.patch('/peritos/:id', updateEspecialidadById); //actualizar especialidad
 router.delete('/peritos/:id', deleteEspecialidadById); //eliminar especialidad
 
