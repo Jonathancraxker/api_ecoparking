@@ -21,29 +21,3 @@ export const _getEspecialidadesByUserId = async (userId) => {
     );
     return rows.map(row => row.especialidad);
 };
-
-export const getComisionesPerfil = async (req, res) => {
-    try {
-        const userId = req.user.id; 
-        const comisiones = await _getComisionesByUserId(userId);
-        return res.json(comisiones);
-    } catch (error) {
-        console.error("Error al obtener las comisiones del usuario:", error);
-        if (!res.headersSent) {
-            return res.status(500).json({ message: "Error interno del servidor al obtener comisiones" });
-        }
-    }
-};
-
-export const getEspecialidadesPerfil = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const especialidades = await _getEspecialidadesByUserId(userId);
-        return res.json(especialidades);
-    } catch (error) {
-        console.error("Error al obtener las especialidades del usuario:", error);
-        if (!res.headersSent) {
-            return res.status(500).json({ message: "Error interno del servidor al obtener especialidades" });
-        }
-    }
-};

@@ -2,39 +2,6 @@
 
 import { pool } from '../config/db.js';
 import path from 'path';
-import fs from 'fs';
-
-// 1. **Controlador `getDocumentsByUserId` (GET /documentos/user)**
-// Para el usuario normal: Obtiene todos los documentos del usuario logueado.
-export const getDocumentosByUserId = async (req, res) => {
-    const connection = await pool.getConnection();
-    try {
-        const userId = req.user.id; // ID del usuario del token autenticado
-
-        if (!userId) {
-            return res.status(401).json({ message: "Usuario no autenticado para obtener documentos." });
-        }
-
-        const [rows] = await connection.query(
-            `SELECT 
-                id, id_usuario,
-                curp, cv, cedula, titulo,
-                comprobante_domicilio, csf, ine, credencial
-            FROM documentos WHERE id_usuario = ?`,
-            [userId]
-        );
-
-        // Si no hay fila de documentos para el usuario, devuelve un objeto vacío
-        const userDocuments = rows[0] || {}; 
-
-        res.status(200).json(userDocuments); 
-    } catch (error) {
-        console.error("Error al obtener documentos por usuario:", error);
-        res.status(500).json({ message: "Error interno del servidor al obtener documentos." });
-    } finally {
-        connection.release();
-    }
-};
 
 // 2. **Controlador `updateDocumento` (PATCH /documentos/:docType)**
 // Para el usuario normal: Sube/actualiza SU propio documento de un tipo específico.

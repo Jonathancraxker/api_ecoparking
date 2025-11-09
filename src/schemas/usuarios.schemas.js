@@ -15,7 +15,10 @@ export const registroSchema = z.object({
     }).nonempty('La contraseña no puede estar vacía')
     .min(3,{
         message:'La contraseña debe tener minimo 3 caracteres'
-    })
+    }),
+    codigo: z.string({
+        required_error:'El codigo es requerido'
+    }).nonempty('El codigo no puede estar vacío')
 })
 
 
@@ -26,6 +29,9 @@ export const loginSchema = z.object({
     .email({
         message: 'correo no valido'
     }),
+    codigo: z.string({
+        required_error:'El código es requerido'
+    }).nonempty('El código no puede estar vacío'),
     contrasena: z.string({
         required_error:'La contraseña es requerida'
     }).min(3,{
@@ -44,12 +50,12 @@ export const updateSchema = z.object({
     .email({
         message: 'correo no valido'
     }),
-    tipo: z.string ({
-        required_error: 'El tipo es requerido'
+    tipo_usuario: z.string ({
+        required_error: 'El tipo_usuario es requerido'
     }),
-    estado: z.string ({
-        required_error: 'El estado es requerido'
-    }).nonempty('El estado no puede estar acío')
+    codigo: z.string ({
+        required_error: 'El codigo es requerido'
+    }).nonempty('El codigo no puede estar vacío')
 })
 
 export const updatePasswordSchema = z.object({

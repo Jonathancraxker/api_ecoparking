@@ -1,10 +1,10 @@
 export const isAdmin = (req, res, next) => {
     // El middleware authToken ya debe haber decodificado el token y puesto el usuario en req.user y el tipo
-    const userRole = req.user?.tipo;
+    const userRole = req.user?.tipo_usuario;
 
-    if (userRole === 'Administrador') {
+    if (userRole === 'Juca') {
         return next();
     }
 
-    return res.status(403).json({ message: "Acceso denegado" });
+    return res.status(403).json({ message: "Acceso denegado, usuario no autorizado." });
 };

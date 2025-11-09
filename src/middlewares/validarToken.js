@@ -1,5 +1,29 @@
+// import jwt from 'jsonwebtoken';
+// import { ACCESS_TOKEN_SECRET } from '../config/config.js';
+
+// // Middlware para validar el Access Token del Header
+// export const authToken = (req, res, next) => { 
+    
+//     // 1. Buscamos el token SÓLO en el header "Authorization"
+//     const authHeader = req.headers['authorization'];
+//     const token = authHeader && authHeader.split(' ')[1];
+
+//     if (!token) {
+//         return res.status(401).json({ message: "No autorizado (token no proporcionado)" });
+//     }
+
+//     jwt.verify(token, ACCESS_TOKEN_SECRET, (err, decoded) => {
+//         if (err) {
+//             // 401 es la señal para que el frontend intente un /refresh
+//             return res.status(401).json({ message: "Token expirado o inválido" });
+//         }
+//         req.user = decoded;
+//         next();
+//     });
+// };
+
 import jwt from 'jsonwebtoken';
-import { TOKEN_SECRET } from '../config/config.js';
+import { ACCESS_TOKEN_SECRET } from '../config/config.js';
 
 //Middlware para validar que exista un token de jwt
 export const authToken = (req, res, next) => { 
@@ -9,7 +33,7 @@ export const authToken = (req, res, next) => {
         return res.status(403).json({ message: "Token no proporcionado" });
     }
 
-    jwt.verify(token, TOKEN_SECRET, (err, decoded) => {
+    jwt.verify(token, ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
             return res.status(401).json({ message: "Token inválido" });
         }

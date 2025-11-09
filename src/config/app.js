@@ -2,18 +2,14 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'path';
-import adminRoutes from '../routes/admin.routes.js'; // Asegúrate de que este archivo incluya /slider
+import adminRoutes from '../routes/admin.routes.js';
+import codigoQr from '../routes/codigo_qr.routes.js';
 
-
-
-// Iniciando el servidor
 const app = express();
-
-// Middleware para convertir los req body para que el backend entienda con express los json
 app.use(express.json());
 
 // Configuración CORS para múltiples orígenes
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'https://admin-dashboard-one-sandy-38.vercel.app', 'https://cienqro.mx'];
+const allowedOrigins = ['http://localhost:3000', 'https://blue-trout-427332.hostingersite.com', 'https://ecoparking-web.vercel.app', 'http://localhost:5173', 'http://localhost:5174'];
 
 app.use(
   cors({
@@ -28,15 +24,11 @@ app.use(
   })
 );
 
-// Manejo de cookies en los navegadores
 app.use(cookieParser());
-
 // Para archivos de la carpeta uploads
 app.use('/uploads', express.static('uploads'));
-
 // Ruta principal de las APIs
-app.use('/cienqro', adminRoutes); 
+app.use('/ecoparking', adminRoutes);
+app.use('/ecoparking', codigoQr);
 
 export default app;
-
-//By Jonathan Cruz
