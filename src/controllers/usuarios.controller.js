@@ -12,7 +12,7 @@ export const registrarUsuario = async (req, res) => {
     try {
         const userCorreo = await verificarCorreo(correo);
         if (userCorreo) {
-            return res.status(400).json({ message: "El correo ya está registrado" });
+            return res.status(400).json({ message: "El correo ya está registrado, ingresa otro." });
         }
         
         // Validación del código
@@ -21,10 +21,8 @@ export const registrarUsuario = async (req, res) => {
             tipo_usuario = 'Administrativo';
         } else if (codigo.startsWith('PRO')) {
             tipo_usuario = 'Profesor';
-        } else if (codigo.startsWith('JUC')) {
-            tipo_usuario = 'Juca';
         } else {
-            return res.status(400).json({ message: "El código no es válido" });
+            return res.status(400).json({ message: "El código no es válido." });
         }
 
         const userId = await createUsuarios({
