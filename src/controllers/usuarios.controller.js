@@ -103,25 +103,27 @@ export const loginUsuario = async (req, res) => {
         const accessToken = await accesoToken(
             { id: user.id, tipo_usuario: user.tipo_usuario }, // Payload completo
             ACCESS_TOKEN_SECRET, // Secreto de Access
-            '15m' // Expiración CORTA
+            '1m' // Expiración CORTA
         );
 
         // 2. CREAR EL REFRESH TOKEN (7 días)
         const refreshToken = await accesoToken(
             { id: user.id }, // Payload simple (solo el ID)
             REFRESH_TOKEN_SECRET, // Secreto de Refresh
-            '30d'
+            '15m'
         );
         
         // 3. ENVIAR EL REFRESH TOKEN EN UNA COOKIE httpOnly
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true, // El frontend no puede leerla con JS
+            //secure: true, produccion, false en localhost
             secure: true,
             // sameSite: 'lax',
             // para produccion: cambiar a none si estan en dominios separados
             // secure: process.env.NODE_ENV === 'production', // true en producción
             sameSite: 'none',
-            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 días
+            maxAge: 15 * 60 * 1000 //15 min
+            //maxAge: 30 * 24 * 60 * 60 * 1000 // 30 días
         });
 
         res.json({
@@ -131,7 +133,8 @@ export const loginUsuario = async (req, res) => {
                 correo: user.correo,
                 tipo_usuario: user.tipo_usuario
             },
-            token: accessToken
+            token: accessToken,
+            refreshToken: refreshToken
         });
     } catch (error) {
         res.status(400).json({ message: error });
@@ -141,8 +144,13 @@ export const loginUsuario = async (req, res) => {
 //Refresh token
 export const refreshToken = async (req, res) => {
     try {
-        // 1. Obtenemos el refresh token de la cookie httpOnly
-        const { refreshToken } = req.cookies;
+        // --- 1. CAMBIO: Buscar el token en la COOKIE (para web) O en el BODY (para móvil) ---
+        const tokenFromCookie = req.cookies.refreshToken;
+        const tokenFromBody = req.body.refreshToken;
+        
+        const refreshToken = tokenFromCookie || tokenFromBody; // Usa el que exista
+
+        // --- FIN DEL CAMBIO ---
         if (!refreshToken) return res.status(401).json({ message: "No autorizado (no hay token)" });
 
         // 2. Verificamos el refresh token con su secreto
@@ -156,7 +164,7 @@ export const refreshToken = async (req, res) => {
         const newAccessToken = await accesoToken(
             { id: user.id, tipo_usuario: user.tipo_usuario },
             ACCESS_TOKEN_SECRET,
-            '15m' // 15 minutos
+            '1m' // 15 minutos
         );
 
         // 5. Enviamos el nuevo access token en el JSON

@@ -40,7 +40,7 @@ router.put('/usuarios/update/:id', authToken, validateMid(updatePasswordSchema),
 router.put('/usuarios/update/imagen/:id', uploadImageProfile.fields([{ name: 'imagen', maxCount: 1 }]), updateImagePerfil); //Actualizar imagen de perfil
 
 //Registros de citas
-router.get('/citas/', getRegistrosCitas); //Obtener citas
+router.get('/citas/', authToken, isAdmin, getRegistrosCitas); //Obtener citas
 
 router.get('/citas/mis-citas', authToken, getMisCitas); //para obtener citas de usuario logeado
 
@@ -50,7 +50,6 @@ router.post('/citas/', authToken, registrarCita); //Registrar nueva cita
 router.patch('/citas/:id', updateCitaById); //actualizar cita
 router.delete('/citas/:id', deleteCitaById); //eliminar cita
 
-
 //Invitados
 // router.get('/invitados/', getRegistrosInvitados); //Obtener todos los invitados
 // router.get('/invitados/:id', getInvitadosId); //Obtener invitado por id
@@ -58,6 +57,7 @@ router.get('/citas/:id/invitados', getInvitadosPorCita); //Obtener invitados que
 router.post('/invitados/', authToken, registrarInvitado); //Registrar nuevo invitado
 router.patch('/invitados/:id', updateInvitadoById); //actualizar invitado
 router.delete('/invitados/:id', deleteInvitadoById); //eliminar invitado
+
 
 
 

@@ -1,4 +1,5 @@
-Inicializar proyecto con "npm run dev" para desarrollo.
+- Instalar dependencias con "npm i" o "npm install"
+- Inicializar proyecto con "npm run dev" para desarrollo.
 
 dependencias utilizadas:
     bcrypt //Para encriptar contraseñas.
