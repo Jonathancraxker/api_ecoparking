@@ -4,7 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import adminRoutes from '../routes/admin.routes.js';
 import codigoQr from '../routes/codigo_qr.routes.js';
-import reportes from '../routes/reportes.routes.js'
+import reportes from '../routes/reportes.routes.js';
 
 const app = express();
 app.use(express.json());
@@ -22,6 +22,7 @@ app.use(
       }
     },
     credentials: true, // Para permitir cookies/sesiones
+    exposeHeaders: ['Content-Disposition'] 
   })
 );
 
