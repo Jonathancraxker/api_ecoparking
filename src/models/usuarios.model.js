@@ -65,7 +65,7 @@ export async function verificarCorreo(correo) {
 export const getUsuarios = async (req, res) => {
     const connection = await pool.getConnection();
     try {
-        const [rows] = await connection.query("SELECT * FROM usuarios");
+        const [rows] = await connection.query("SELECT * FROM usuarios ORDER BY id DESC");
         res.status(200).json(rows);
     } catch (error) {
         console.error("Error al obtener usuarios:", error);
@@ -118,15 +118,15 @@ export const updateUserByIdCRUD = async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const { id } = req.params;
-        const { nombre, correo, codigo, tipo_usuario, telefono, division } = req.body; // Se obtienen los datos a actualizar del cuerpo que manda el cliente
+        const { nombre, correo, codigo, tipo_usuario, telefono, division, intentos } = req.body; // Se obtienen los datos a actualizar del cuerpo que manda el cliente
 
-        if (!nombre || !correo || !codigo || !tipo_usuario || !telefono || !division) {
+        if (!nombre || !correo || !codigo || !tipo_usuario || !telefono || !division || !intentos) {
             return res.status(400).json({ message: "Por favor proporciona todos los campos necesarios" });
         }
         
         const [result] = await connection.query(
-            "UPDATE usuarios SET nombre = ?, correo = ?, codigo = ?, tipo_usuario = ?, telefono = ?, division = ? WHERE id = ?",
-            [nombre, correo, codigo, tipo_usuario, telefono, division, id]
+            "UPDATE usuarios SET nombre = ?, correo = ?, codigo = ?, tipo_usuario = ?, telefono = ?, division = ?, intentos = ? WHERE id = ?",
+            [nombre, correo, codigo, tipo_usuario, telefono, division, intentos, id]
         );
 
         if (result.affectedRows === 0) {

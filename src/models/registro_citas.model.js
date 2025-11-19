@@ -5,7 +5,7 @@ export const getRegistrosCitas = async (req, res) => {
     const connection = await pool.getConnection();
     try {
         // 1. Obtener TODAS las citas (como ya lo hacías)
-        const [citas] = await connection.query("SELECT * FROM registro_citas");
+        const [citas] = await connection.query("SELECT * FROM registro_citas ORDER BY id DESC");
 
         if (citas.length === 0) {
             return res.status(200).json([]); // No hay citas, devuelve array vacío
@@ -79,7 +79,7 @@ export const getMisCitas = async (req, res) => {
 
         // 2. Buscamos solo las citas de ESE usuario
         const [citas] = await connection.query(
-            "SELECT * FROM registro_citas WHERE id_usuario = ?", 
+            "SELECT * FROM registro_citas WHERE id_usuario = ? ORDER BY id DESC", 
             [id_usuario]
         );
 

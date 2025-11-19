@@ -1,14 +1,10 @@
-// Archivo: src/routes/reportes.routes.js
-// (Añadida la nueva ruta de predicción)
-
 import { Router } from "express";
-// 1. Importamos todos los controladores
 import { 
     getReportes, 
     crearReporte,
     generarReportePDF,
     getEstadisticas,
-    getPrediccionSiguienteMes // <-- 1. IMPORTAMOS EL NUEVO
+    getPrediccionSiguienteMes
 } from "../controllers/reportes.controller.js";
 import { authToken } from "../middlewares/validarToken.js";
 import { isAdmin } from "../middlewares/isAdmin.js";
@@ -47,7 +43,6 @@ router.get(
     getEstadisticas
 );
 
-// --- ¡NUEVA RUTA AÑADIDA AL FINAL! ---
 // Ruta para la Predicción del Siguiente Mes
 router.get(
     '/reportes/prediccion-siguiente-mes',

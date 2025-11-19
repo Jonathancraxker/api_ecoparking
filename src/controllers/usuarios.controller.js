@@ -101,14 +101,14 @@ export const loginUsuario = async (req, res) => {
         const accessToken = await accesoToken(
             { id: user.id, tipo_usuario: user.tipo_usuario }, // Payload completo
             ACCESS_TOKEN_SECRET, // Secreto de Access
-            '1m' // Expiración CORTA
+            '15m' // Expiración CORTA
         );
 
         // 2. CREAR EL REFRESH TOKEN (7 días)
         const refreshToken = await accesoToken(
             { id: user.id }, // Payload simple (solo el ID)
             REFRESH_TOKEN_SECRET, // Secreto de Refresh
-            '15m'
+            '30d'
         );
         
         // 3. ENVIAR EL REFRESH TOKEN EN UNA COOKIE httpOnly
@@ -120,8 +120,8 @@ export const loginUsuario = async (req, res) => {
             // para produccion: cambiar a none si estan en dominios separados
             // secure: process.env.NODE_ENV === 'production', // true en producción
             sameSite: 'none',
-            maxAge: 15 * 60 * 1000 //15 min
-            //maxAge: 30 * 24 * 60 * 60 * 1000 // 30 días
+            // maxAge: 15 * 60 * 1000 //15 min
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 días
         });
 
         res.json({
@@ -162,7 +162,7 @@ export const refreshToken = async (req, res) => {
         const newAccessToken = await accesoToken(
             { id: user.id, tipo_usuario: user.tipo_usuario },
             ACCESS_TOKEN_SECRET,
-            '1m' // 15 minutos
+            '15m' // 15 minutos
         );
 
         // 5. Enviamos el nuevo access token en el JSON

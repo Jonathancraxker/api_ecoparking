@@ -7,10 +7,8 @@ import { authToken } from "../middlewares/validarToken.js"; //verificación de t
 import { deleteCitaById, getCitasId, getMisCitas, getRegistrosCitas, registrarCita, updateCitaById } from "../models/registro_citas.model.js"; //CRUD especialidades
 import { updateImagePerfil, updateUserById, updateUserByPassword } from "../models/profile.model.js"; //Perfil de usuario
 import { uploadImageProfile } from "../middlewares/uploadImagenProfile.js"; //Imagen de perfil
-import { uploadUserDocuments } from "../middlewares/uploadDocuments.js"; //para validaciónes de archivos
-import { deleteDocumento, getAllDocuments, updateDocumentoByAdmin, viewDocumentAsAdmin } from "../controllers/documentosAdmin.controller.js"; //CRUD documentos
 import { isAdmin } from "../middlewares/isAdmin.js"; //validación de tipo de usuario
-import { deleteInvitadoById, getInvitadosId, getInvitadosPorCita, getRegistrosInvitados, registrarInvitado, updateInvitadoById } from "../models/invitados.model.js";
+import { deleteInvitadoById, getInvitadosPorCita, registrarInvitado, updateInvitadoById } from "../models/invitados.model.js";
 
 const router = Router();
 
@@ -53,38 +51,9 @@ router.delete('/citas/:id', deleteCitaById); //eliminar cita
 //Invitados
 // router.get('/invitados/', getRegistrosInvitados); //Obtener todos los invitados
 // router.get('/invitados/:id', getInvitadosId); //Obtener invitado por id
-router.get('/citas/:id/invitados', getInvitadosPorCita); //Obtener invitados que corresponden a una cita
+router.get('/citas/:id/invitados', authToken, getInvitadosPorCita); //Obtener invitados que corresponden a una cita
 router.post('/invitados/', authToken, registrarInvitado); //Registrar nuevo invitado
 router.patch('/invitados/:id', updateInvitadoById); //actualizar invitado
 router.delete('/invitados/:id', deleteInvitadoById); //eliminar invitado
-
-
-
-
-//Documentos
-router.get('/documentos', authToken, isAdmin, getAllDocuments); //obtener documentos
-router.get(
-    '/documentos/admin/view/:userId/:docType', 
-    authToken, 
-    isAdmin,
-    viewDocumentAsAdmin
-); //obtener todos los documentos, solo para administrador
-
-router.patch('/documentos/:id', // actualizar documento, :id_usuario es el ID del usuario al que pertenece el documento
-    authToken, 
-    isAdmin,
-    uploadUserDocuments.fields([ // Los campos que son recibidos para los documentos
-        { name: 'curp', maxCount: 1 }, { name: 'cv', maxCount: 1 }, { name: 'cedula', maxCount: 1 },
-        { name: 'titulo', maxCount: 1 }, { name: 'comprobante_domicilio', maxCount: 1 }, { name: 'csf', maxCount: 1 },
-        { name: 'ine', maxCount: 1 }, { name: 'credencial', maxCount: 1 }
-    ]),
-    updateDocumentoByAdmin
-); 
-
-router.delete('/documentos/:id_usuario/:docType', // eliminar documento
-    authToken,
-    isAdmin,
-    deleteDocumento
-); 
 
 export default router;

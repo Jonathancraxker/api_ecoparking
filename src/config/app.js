@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 
 // Configuración CORS para múltiples orígenes
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:8081', 'https://blue-trout-427332.hostingersite.com', 'https://ecoparking-web.vercel.app', 'http://localhost:5173', 'http://localhost:5174'];
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:8081', 'https://cyan-grouse-718251.hostingersite.com', 'https://ecoparking-web.vercel.app', 'http://localhost:5173', 'http://localhost:5174'];
 
 app.use(
   cors({

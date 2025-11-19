@@ -265,8 +265,8 @@ export const getPrediccionSiguienteMes = async (req, res) => {
     try {
         
         // --- ¡AQUÍ ESTÁ LA SIMULACIÓN! ---
-        const hoy = new Date(); // <-- Versión de producción (fecha real)
-        // const hoy = new Date('2026-02-15T12:00:00'); // <-- Versión de prueba
+        // const hoy = new Date(); // <-- Versión de producción (fecha real)
+        const hoy = new Date('2025-11-15T12:00:00'); // <-- Versión de prueba
         // --- FIN DEL CAMBIO ---
 
         const datosHistoricos = await getDatosHistoricosMensuales(hoy);
@@ -285,7 +285,7 @@ export const getPrediccionSiguienteMes = async (req, res) => {
         const proximoMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
         const nombreMes = proximoMes.toLocaleString('es-MX', { 
             month: 'long', 
-            year: 'numeric' 
+            year: 'numeric'
         });
 
         res.status(200).json({
