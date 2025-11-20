@@ -48,7 +48,7 @@ export const validarTokenQR = async (req, res) => {
         
         // Asumimos que la fecha es 'YYYY-MM-DD' y la hora es 'HH:MM:SS' (o 'HH:MM')
         // Creamos una fecha y hora de inicio exacta
-        const TIMEZONE = '-06:00'; 
+        const TIMEZONE = '-06:00'; //Se agrega TIMEZONE -6 horas por los horarios del servidor, buscas más información...
 
         // Construimos la fecha especificando la zona horaria al final
         const inicioCita = new Date(`${cita.fecha_inicio}T${cita.hora_inicio}${TIMEZONE}`);
