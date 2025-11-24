@@ -69,7 +69,7 @@ export const registrarInvitado = async (req, res) => {
         
         if (!nombre || !correo || !id_cita) {return res.status(400).json({ message: "Todos los campos son requeridos" });}
         await connection.beginTransaction();
-        const sqlInvitado = "INSERT INTO Invitados (nombre, correo, empresa, tipo_visitante, id_cita) VALUES (?, ?, ?, ?, ?)";
+        const sqlInvitado = "INSERT INTO invitados (nombre, correo, empresa, tipo_visitante, id_cita) VALUES (?, ?, ?, ?, ?)";
         const [result] = await connection.query(sqlInvitado, [nombre, correo, empresa, tipo_visitante, id_cita]);
         
         // 2. Actualizamos el contador en la tabla de citas
@@ -99,7 +99,7 @@ export const updateInvitadoById = async (req, res) => {
         const { nombre, correo, empresa, tipo_visitante } = req.body;
 
         const [result] = await connection.query(
-            "UPDATE Invitados SET nombre = ?, correo = ?, empresa = ?, tipo_visitante = ? WHERE id = ?",
+            "UPDATE invitados SET nombre = ?, correo = ?, empresa = ?, tipo_visitante = ? WHERE id = ?",
             [nombre, correo, empresa, tipo_visitante, id]
         );
 
@@ -123,7 +123,7 @@ export const deleteInvitadoById = async (req, res) => {
         await connection.beginTransaction();
 
         // 1. (Opcional pero recomendado) Necesitamos saber a qué cita pertenecía para restar el conteo
-        const [rows] = await connection.query("SELECT id_cita FROM Invitados WHERE id = ?", [id]);
+        const [rows] = await connection.query("SELECT id_cita FROM invitados WHERE id = ?", [id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ message: "Invitado no encontrado" });
@@ -131,7 +131,7 @@ export const deleteInvitadoById = async (req, res) => {
         const id_cita = rows[0].id_cita;
 
         // 2. Eliminamos al invitado
-        await connection.query("DELETE FROM Invitados WHERE id = ?", [id]);
+        await connection.query("DELETE FROM invitados WHERE id = ?", [id]);
         
         // 3. Actualizamos el contador en la tabla de citas
         const sqlCita = "UPDATE registro_citas SET numero_invitados = numero_invitados - 1 WHERE id = ?";

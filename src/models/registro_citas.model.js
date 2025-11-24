@@ -156,7 +156,7 @@ export const registrarCita = async (req, res) => {
         if (invitadosArray.length > 0) {
             // Preparamos la consulta para los invitados
             const sqlInvitado = `
-                INSERT INTO Invitados (nombre, correo, empresa, tipo_visitante, id_cita) VALUES (?, ?, ?, ?, ?)`;
+                INSERT INTO invitados (nombre, correo, empresa, tipo_visitante, id_cita) VALUES (?, ?, ?, ?, ?)`;
             
             // Hacemos un bucle y ejecutamos una inserción por cada invitado
             for (const invitado of invitadosArray) {

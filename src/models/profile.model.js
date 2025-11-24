@@ -1,10 +1,12 @@
 import { pool } from '../config/db.js'
 import bcrypt from 'bcryptjs';
+import { verificarCorreo } from './usuarios.model.js';
 
 export const updateUserById = async (req, res) => {
     const connection = await pool.getConnection();
     
     try {
+
         const { id } = req.params; // Se obtiene el id desde la URL
         const {nombre, correo, telefono, division} = req.body; // Se obtienen los datos a actualizar del cuerpo
 
@@ -13,6 +15,12 @@ export const updateUserById = async (req, res) => {
             return res.status(400).json({ message: "Por favor proporciona todos los campos necesarios" });
         }
         
+        const userCorreo = await verificarCorreo(correo);
+        
+        if (userCorreo && userCorreo.id != id) {
+            return res.status(400).json({ message: "El correo ya está registrado, ingresa otro." });
+        }
+
         const [result] = await connection.query(
             "UPDATE usuarios SET nombre = ?, correo = ?, telefono = ?, division = ? WHERE id = ?",
             [nombre, correo, telefono, division, id]
