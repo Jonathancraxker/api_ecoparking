@@ -39,11 +39,8 @@ router.put('/usuarios/update/imagen/:id', uploadImageProfile.fields([{ name: 'im
 
 //Registros de citas
 router.get('/citas/', authToken, isAdmin, getRegistrosCitas); //Obtener citas
-
 router.get('/citas/mis-citas', authToken, getMisCitas); //para obtener citas de usuario logeado
-
 router.get('/citas/:id', getCitasId); //Obtener información de una cita por id
-
 router.post('/citas/', authToken, registrarCita); //Registrar nueva cita
 router.patch('/citas/:id', updateCitaById); //actualizar cita
 router.delete('/citas/:id', deleteCitaById); //eliminar cita
