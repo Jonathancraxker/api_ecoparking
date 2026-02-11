@@ -1,9 +1,9 @@
 import { pool } from '../config/db.js';
 
 //Cámbiar por url de producción cuando se tenga
-const FRONTEND_URL = 'https://ecoparking-web.vercel.app/codigo'; //Para vercel
+// const FRONTEND_URL = 'https://ecoparking-web.vercel.app/codigo'; //Para vercel
 // const FRONTEND_URL = 'https://cyan-grouse-718251.hostingersite.com/codigo'; //Para hostinger
-// const FRONTEND_URL = 'http://localhost:5173/codigo'; //Para pruebas locales
+const FRONTEND_URL = 'http://localhost:5173/codigo'; //Para pruebas locales
 
 export const validarTokenQR = async (req, res) => {
     const connection = await pool.getConnection();

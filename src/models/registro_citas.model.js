@@ -29,8 +29,11 @@ export const getRegistrosCitas = async (req, res) => {
 
             // Construir la URL de validación completa
             const url_validacion = qrToken
-                ? `https://ecoparking-api.onrender.com/ecoparking/qr/validar/${qrToken}`
+                ? `http://localhost:4000/ecoparking/qr/validar/${qrToken}`
                 : null; // Si no tiene token, la URL es null
+
+                // Producción:
+                // `https://ecoparking-api.onrender.com/ecoparking/qr/validar/${qrToken}`
 
             // Devolver el objeto de la cita original, más el nuevo campo
             return {
@@ -101,8 +104,9 @@ export const getMisCitas = async (req, res) => {
                 ...cita,
                 // Construimos la URL de validación que el frontend necesita
                 url_validacion: qrToken 
-                    ? `https://ecoparking-api.onrender.com/ecoparking/qr/validar/${qrToken}` 
+                    ? `http://localhost:4000/ecoparking/qr/validar/${qrToken}` 
                     : null
+                    // `https://ecoparking-api.onrender.com/ecoparking/qr/validar/${qrToken}`
             };
         });
 
