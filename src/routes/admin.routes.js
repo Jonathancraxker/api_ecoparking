@@ -4,7 +4,7 @@ import { registrarUsuario, loginUsuario, logout, profile, status, registrarUsuar
 import { loginSchema, registroSchema, updatePasswordSchema, updateSchema } from "../schemas/usuarios.schemas.js"; //Validación de datos
 import { getUsuarios, getUsersId, deleteUserById, updateUserByIdCRUD } from "../models/usuarios.model.js"; //CRUD usuarios
 import { authToken } from "../middlewares/validarToken.js"; //verificación de token existente
-import { deleteCitaById, getCitasId, getMisCitas, getRegistrosCitas, registrarCita, updateCitaById } from "../models/registro_citas.model.js"; //CRUD especialidades
+import { deleteCitaById, getMisCitas, getRegistrosCitas, registrarCita, updateCitaById } from "../models/registro_citas.model.js"; //CRUD especialidades
 import { updateImagePerfil, updateUserById, updateUserByPassword } from "../models/profile.model.js"; //Perfil de usuario
 import { uploadImageProfile } from "../middlewares/uploadImagenProfile.js"; //Imagen de perfil
 import { isAdmin } from "../middlewares/isAdmin.js"; //validación de tipo de usuario
@@ -40,7 +40,7 @@ router.put('/usuarios/update/imagen/:id', uploadImageProfile.fields([{ name: 'im
 //Registros de citas
 router.get('/citas/', authToken, isAdmin, getRegistrosCitas); //Obtener citas
 router.get('/citas/mis-citas', authToken, getMisCitas); //para obtener citas de usuario logeado
-router.get('/citas/:id', getCitasId); //Obtener información de una cita por id
+// router.get('/citas/:id', getCitasId); //Obtener información de una cita por id
 router.post('/citas/', authToken, registrarCita); //Registrar nueva cita
 router.patch('/citas/:id', updateCitaById); //actualizar cita
 router.delete('/citas/:id', deleteCitaById); //eliminar cita

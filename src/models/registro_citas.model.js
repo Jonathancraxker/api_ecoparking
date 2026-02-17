@@ -53,26 +53,26 @@ export const getRegistrosCitas = async (req, res) => {
     }
 };
 
-export const getCitasId = async (req, res) => {
-    const connection = await pool.getConnection();
-    try {
-        console.log("Parametros recibidos:", req.params);
+// export const getCitasId = async (req, res) => {
+//     const connection = await pool.getConnection();
+//     try {
+//         console.log("Parametros recibidos:", req.params);
 
-        const { id } = req.params;
-        console.log("ID recibido:", id);
+//         const { id } = req.params;
+//         console.log("ID recibido:", id);
 
-        const [rows] = await connection.query("SELECT * FROM Registro_citas WHERE id = ?",  [id]);
-        if (rows.length === 0) {
-            return res.status(404).json({ message: "Cita no encontrada" });
-        }
-        res.status(200).json(rows[0]);
-    } catch (error) {
-        console.error("Error al obtener cita:", error);
-        res.status(500).json({ message: "Error interno del servidor" });
-    } finally {
-        connection.release();
-    }
-};
+//         const [rows] = await connection.query("SELECT * FROM Registro_citas WHERE id = ?",  [id]);
+//         if (rows.length === 0) {
+//             return res.status(404).json({ message: "Cita no encontrada" });
+//         }
+//         res.status(200).json(rows[0]);
+//     } catch (error) {
+//         console.error("Error al obtener cita:", error);
+//         res.status(500).json({ message: "Error interno del servidor" });
+//     } finally {
+//         connection.release();
+//     }
+// };
 
 export const getMisCitas = async (req, res) => {
     const connection = await pool.getConnection();
