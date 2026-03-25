@@ -5,8 +5,11 @@ import path from 'path';
 import adminRoutes from '../routes/admin.routes.js';
 import codigoQr from '../routes/codigo_qr.routes.js';
 import reportes from '../routes/reportes.routes.js';
+<<<<<<< HEAD
 import cajones from '../routes/cajones.routes.js';
 
+=======
+>>>>>>> 04bd35cfe7544b75be39c3613c56fbf020fb21b1
 
 const app = express();
 app.use(express.json());
@@ -35,7 +38,10 @@ app.use('/uploads', express.static('uploads'));
 app.use('/ecoparking', adminRoutes);
 app.use('/ecoparking', codigoQr);
 app.use('/ecoparking', reportes);
+<<<<<<< HEAD
 app.use('/ecoparking', cajones);
 
+=======
+>>>>>>> 04bd35cfe7544b75be39c3613c56fbf020fb21b1
 
 export default app;
