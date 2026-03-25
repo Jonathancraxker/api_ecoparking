@@ -35,7 +35,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/ecoparking', adminRoutes);
 app.use('/ecoparking', codigoQr);
 app.use('/ecoparking', reportes);
-app.use('/ecoparking', cajones);
 
+app.use('/ecoparking', cajones);
 
 export default app;
