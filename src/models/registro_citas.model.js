@@ -53,7 +53,6 @@ export const getRegistrosCitas = async (req, res) => {
     }
 };
 
-<<<<<<< HEAD
 export const getCitasId = async (req, res) => {
     const connection = await pool.getConnection();
     try {
@@ -74,28 +73,6 @@ export const getCitasId = async (req, res) => {
         connection.release();
     }
 };
-=======
-// export const getCitasId = async (req, res) => {
-//     const connection = await pool.getConnection();
-//     try {
-//         console.log("Parametros recibidos:", req.params);
-
-//         const { id } = req.params;
-//         console.log("ID recibido:", id);
-
-//         const [rows] = await connection.query("SELECT * FROM Registro_citas WHERE id = ?",  [id]);
-//         if (rows.length === 0) {
-//             return res.status(404).json({ message: "Cita no encontrada" });
-//         }
-//         res.status(200).json(rows[0]);
-//     } catch (error) {
-//         console.error("Error al obtener cita:", error);
-//         res.status(500).json({ message: "Error interno del servidor" });
-//     } finally {
-//         connection.release();
-//     }
-// };
->>>>>>> 04bd35cfe7544b75be39c3613c56fbf020fb21b1
 
 export const getMisCitas = async (req, res) => {
     const connection = await pool.getConnection();
@@ -145,7 +122,6 @@ export const getMisCitas = async (req, res) => {
 
 export const registrarCita = async (req, res) => {
     const connection = await pool.getConnection();
-<<<<<<< HEAD
     try {
         const id_usuario = req.user.id;
         const { fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numero_invitados, invitados, id_cajon } = req.body;
@@ -162,7 +138,7 @@ export const registrarCita = async (req, res) => {
         const id_cita_nueva = resultCita.insertId;
 
         // 2. Cambiar estado del cajón a 'Ocupado'
-        await connection.query("UPDATE cajones SET estado = 'Ocupado' WHERE id = ?", [id_cajon]);
+        // await connection.query("UPDATE cajones SET estado = 'Ocupado' WHERE id = ?", [id_cajon]);
 
         // 3. Generar QR
         const tokenQR = randomUUID(); 
@@ -182,73 +158,6 @@ export const registrarCita = async (req, res) => {
     } catch (error) {
         await connection.rollback();
         res.status(500).json({ message: "Error al registrar la cita" });
-=======
-    
-    try {
-        // Obtenemos el ID del usuario de forma SEGURA (desde el token verificado)
-        const id_usuario = req.user.id;
-
-        // Obtenemos los datos de la cita Y el array de invitados desde el body
-        const {fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numero_invitados, invitados} = req.body;
-        if (!fecha_inicio || !fecha_fin || !hora_inicio || !hora_fin || !motivo || !estado_cita) {
-            return res.status(400).json({ message: "Por favor, proporciona todos los campos necesarios" });
-        }
-        // --- 2. INICIAR LA TRANSACCIÓN ---
-        // Esto asegura que si algo falla (ej: un invitado no se guarda),
-        // se deshace todo, incluyendo el registro de la cita.
-        await connection.beginTransaction();
-
-        const sqlCita = `
-            INSERT INTO registro_citas (fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numero_invitados, id_usuario) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-        const [resultCita] = await connection.query(sqlCita, [
-            fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numero_invitados, id_usuario
-        ]);
-        
-        // Obtenemos el ID de la cita que acabamos de crear
-        const id_cita_nueva = resultCita.insertId;
-
-        // --- 4. INSERTAR EL TOKEN DEL CÓDIGO QR ---
-        // Generamos un token aleatorio y único (UUID)
-        const tokenQR = randomUUID(); 
-        
-        const sqlQR = "INSERT INTO codigo_qr (token, id_cita) VALUES (?, ?)";
-        await connection.query(sqlQR, [tokenQR, id_cita_nueva]);
-
-        // --- 5. INSERTAR LOS INVITADOS (SI EXISTEN) ---
-        // Verificamos que el array 'invitados' exista y no esté vacío
-        const invitadosArray = invitados || []; // Si es nulo o undefined, lo convierte en []
-        
-        if (invitadosArray.length > 0) {
-            // Preparamos la consulta para los invitados
-            const sqlInvitado = `
-                INSERT INTO invitados (nombre, correo, empresa, tipo_visitante, id_cita) VALUES (?, ?, ?, ?, ?)`;
-            
-            // Hacemos un bucle y ejecutamos una inserción por cada invitado
-            for (const invitado of invitadosArray) {
-                await connection.query(sqlInvitado, [
-                    invitado.nombre,
-                    invitado.correo,
-                    invitado.empresa,
-                    invitado.tipo_visitante,
-                    id_cita_nueva // Usamos el ID de la cita nueva
-                ]);
-            }
-        }
-
-        // --- 6. FINALIZAR LA TRANSACCIÓN (COMMIT) ---
-        // Si llegamos aquí sin errores, guardamos todos los cambios en la BD
-        await connection.commit();
-        res.status(201).json({
-            message: "Cita creada exitosamente",
-            id_cita: id_cita_nueva,
-            token_qr: tokenQR // Devolvemos el token por si la app lo necesita
-        }); 
-
-    } catch (error) {
-        await connection.rollback(); 
-        console.error("Error al registrar la cita:", error);
-        res.status(500).json({ message: "Error interno del servidor, se deshicieron los cambios." });
->>>>>>> 04bd35cfe7544b75be39c3613c56fbf020fb21b1
     } finally {
         connection.release();
     }
@@ -259,15 +168,22 @@ export const updateCitaById = async (req, res) => {
 
     try {
         const { id } = req.params; 
-        const {fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numero_invitados} = req.body;
+        let { fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numero_invitados, id_cajon } = req.body;
 
-        if (!fecha_inicio || !fecha_fin || !hora_inicio || !hora_fin || !motivo || !estado_cita) {
+        // 1. Validar que no falten datos esenciales
+        if (!fecha_inicio || !fecha_fin || !hora_inicio || !hora_fin || !motivo || !estado_cita || !id_cajon) {
             return res.status(400).json({ message: "Por favor, proporciona todos los campos necesarios" });
         }
 
+        // 2. Limpieza defensiva de datos (evita que MySQL colapse con undefined o textos vacíos)
+        const numInvitados = Number(numero_invitados) || 0; // Si viene vacío o undefined, se hace 0
+        const cajonId = Number(id_cajon); 
+        const citaId = Number(id);
+
+        // 3. Ejecutar la actualización
         const [result] = await connection.query(
-            `UPDATE registro_citas SET fecha_inicio = ?, fecha_fin = ?, hora_inicio = ?, hora_fin = ?, motivo = ?, estado_cita = ?, numero_invitados = ? WHERE id = ?`,
-            [fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numero_invitados, id]
+            `UPDATE registro_citas SET fecha_inicio = ?, fecha_fin = ?, hora_inicio = ?, hora_fin = ?, motivo = ?, estado_cita = ?, numero_invitados = ?, id_cajon = ? WHERE id = ?`,
+            [fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numInvitados, cajonId, citaId]
         );
         
         if (result.affectedRows === 0) {
@@ -277,7 +193,7 @@ export const updateCitaById = async (req, res) => {
         res.status(200).json({ message: "Cita actualizada exitosamente" });
 
     } catch (error) {
-        console.error("Error al actualizar la cita:", error);
+        console.error("Error crítico en updateCitaById:", error);
         res.status(500).json({ message: "Error interno del servidor" });
     } finally {
         connection.release();
@@ -287,7 +203,6 @@ export const updateCitaById = async (req, res) => {
 export const deleteCitaById = async (req, res) => {
     const connection = await pool.getConnection();
     try {
-<<<<<<< HEAD
         const { id } = req.params;
 
         await connection.beginTransaction();
@@ -305,9 +220,9 @@ export const deleteCitaById = async (req, res) => {
         await connection.query("DELETE FROM registro_citas WHERE id = ?", [id]);
 
         // 3. Poner el cajón en 'Disponible' nuevamente
-        if (id_cajon_a_liberar) {
-            await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [id_cajon_a_liberar]);
-        }
+        // if (id_cajon_a_liberar) {
+        //     await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [id_cajon_a_liberar]);
+        // }
 
         await connection.commit();
         res.status(200).json({ message: "Cita eliminada y cajón liberado" });
@@ -315,18 +230,6 @@ export const deleteCitaById = async (req, res) => {
     } catch (error) {
         await connection.rollback();
         res.status(500).json({ message: "Error al eliminar" });
-=======
-        const { id } = req.params; // Se obtiene el id desde la URL
-        const [result] = await connection.query("DELETE FROM registro_citas WHERE id = ?", [id]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Cita no encontrada" });
-        }
-        res.status(200).json({ message: "Cita eliminada exitosamente" });
-    } catch (error) {
-        console.error("Error al eliminar cita:", error);
-        res.status(500).json({ message: "Error interno del servidor" });
->>>>>>> 04bd35cfe7544b75be39c3613c56fbf020fb21b1
     } finally {
         connection.release();
     }
