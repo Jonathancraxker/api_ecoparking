@@ -7,7 +7,6 @@ import codigoQr from '../routes/codigo_qr.routes.js';
 import reportes from '../routes/reportes.routes.js';
 import cajones from '../routes/cajones.routes.js';
 
-
 const app = express();
 app.use(express.json());
 
@@ -35,7 +34,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/ecoparking', adminRoutes);
 app.use('/ecoparking', codigoQr);
 app.use('/ecoparking', reportes);
-
 app.use('/ecoparking', cajones);
+
 
 export default app;

@@ -13,16 +13,19 @@ export const validarTokenQR = async (req, res) => {
             [token]
         );
 
-        // CHEQUEO 1: ¿El token existe? (Aquí no hay cita asociada aún)
+        // CHEQUEO 1: ¿El token existe?
         if (qrResult.length === 0) {
             return res.redirect(`${FRONTEND_URL}?status=denegado&reason=no_encontrada`);
         }
 
         const idCita = qrResult[0].id_cita;
         
-        // 2. Buscamos la información completa de la cita
+        // 2. Buscamos la información de la cita Y HACEMOS JOIN CON CAJONES
         const [citaResult] = await connection.query(
-            "SELECT id, fecha_inicio, fecha_fin, hora_inicio, hora_fin, estado_cita, motivo FROM registro_citas WHERE id = ?", 
+            `SELECT r.id, r.fecha_inicio, r.fecha_fin, r.hora_inicio, r.hora_fin, r.estado_cita, r.motivo, c.numero_cajon 
+             FROM registro_citas r 
+             LEFT JOIN cajones c ON r.id_cajon = c.id 
+             WHERE r.id = ?`, 
             [idCita]
         );
 
@@ -33,12 +36,13 @@ export const validarTokenQR = async (req, res) => {
         const cita = citaResult[0];
         const ahora = new Date();
 
-        // Preparamos los datos de la cita para enviarlos en cualquier caso (éxito o error)
+        // Preparamos los datos de la cita (agregamos el cajon)
         const citaParams = new URLSearchParams({
             motivo: cita.motivo,
             fecha: cita.fecha_inicio,
             fecha_fin: cita.fecha_fin,
-            horario: `${cita.hora_inicio} - ${cita.hora_fin}`
+            horario: `${cita.hora_inicio} - ${cita.hora_fin}`,
+            cajon: cita.numero_cajon || 'Sin asignar' // <--- NUEVO: Mandamos el cajón
         });
 
         // VALIDACIÓN A: ¿El estatus es correcto?

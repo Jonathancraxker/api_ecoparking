@@ -48,3 +48,34 @@ export async function actualizarEstadoCajon(id, estado, connection) {
     // Usamos la conexión que viene por parámetro para mantener la transacción
     await connection.query(query, [estado, id])
 }
+
+export async function getCajonesDisponiblesPorFechaHora(fecha_inicio, fecha_fin, hora_inicio, hora_fin, id_cita_excluir = null) {
+    const connection = await pool.getConnection();
+    try {
+        let subQuery = `
+            SELECT id_cajon FROM registro_citas 
+            WHERE id_cajon IS NOT NULL 
+            AND estado_cita != 'Cancelada'
+            AND CONCAT(fecha_fin, ' ', hora_fin) > CONCAT(?, ' ', ?)
+            AND CONCAT(fecha_inicio, ' ', hora_inicio) < CONCAT(?, ' ', ?)
+        `;
+        
+        const queryParams = [fecha_inicio, hora_inicio, fecha_fin, hora_fin];
+
+        if (id_cita_excluir) {
+            subQuery += ` AND id != ?`;
+            queryParams.push(id_cita_excluir);
+        }
+
+        const query = `
+            SELECT * FROM cajones 
+            WHERE estado != 'Mantenimiento' 
+            AND id NOT IN (${subQuery})
+        `;
+        
+        const [rows] = await connection.query(query, queryParams);
+        return rows;
+    } finally {
+        connection.release();
+    }
+}
