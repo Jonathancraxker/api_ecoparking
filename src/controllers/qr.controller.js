@@ -1,6 +1,6 @@
 import { pool } from '../config/db.js';
 
-const FRONTEND_URL = 'https://ecoparking-web-jade.vercel.app/codigo'; //Para pruebas locales
+const FRONTEND_URL = 'https://ecoparking-web-jade.vercel.app/codigo';
 
 export const validarTokenQR = async (req, res) => {
     const connection = await pool.getConnection();

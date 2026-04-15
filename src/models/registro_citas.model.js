@@ -104,7 +104,7 @@ export const getMisCitas = async (req, res) => {
                 ...cita,
                 // Construimos la URL de validación que el frontend necesita
                 url_validacion: qrToken 
-                    ? `https://ecoparking-web-jade.vercel.app/ecoparking/qr/validar/${qrToken}` 
+                    ? `http://localhost:4000/ecoparking/qr/validar/${qrToken}`
                     : null
                     // `https://ecoparking-api.onrender.com/ecoparking/qr/validar/${qrToken}`
             };
