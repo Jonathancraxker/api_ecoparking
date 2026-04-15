@@ -137,8 +137,8 @@ export const registrarCita = async (req, res) => {
         
         const id_cita_nueva = resultCita.insertId;
 
-        // 2. Cambiar estado del cajón a 'Ocupado'
-        // await connection.query("UPDATE cajones SET estado = 'Ocupado' WHERE id = ?", [id_cajon]);
+        // 2. Cambiar estado del cajón a 'Ocupado' (¡LÍNEA CORREGIDA!)
+        await connection.query("UPDATE cajones SET estado = 'Ocupado' WHERE id = ?", [id_cajon]);
 
         // 3. Generar QR
         const tokenQR = randomUUID(); 
@@ -175,24 +175,57 @@ export const updateCitaById = async (req, res) => {
             return res.status(400).json({ message: "Por favor, proporciona todos los campos necesarios" });
         }
 
-        // 2. Limpieza defensiva de datos (evita que MySQL colapse con undefined o textos vacíos)
-        const numInvitados = Number(numero_invitados) || 0; // Si viene vacío o undefined, se hace 0
-        const cajonId = Number(id_cajon); 
+        // 2. Limpieza defensiva de datos
+        const numInvitados = Number(numero_invitados) || 0; 
+        const newCajonId = Number(id_cajon); 
         const citaId = Number(id);
 
-        // 3. Ejecutar la actualización
-        const [result] = await connection.query(
-            `UPDATE registro_citas SET fecha_inicio = ?, fecha_fin = ?, hora_inicio = ?, hora_fin = ?, motivo = ?, estado_cita = ?, numero_invitados = ?, id_cajon = ? WHERE id = ?`,
-            [fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numInvitados, cajonId, citaId]
-        );
+        // Iniciamos la transacción para asegurar que no haya errores a medias
+        await connection.beginTransaction();
+
+        // 3. Obtener el id_cajon que tiene la cita ANTES de actualizar
+        const [citaActual] = await connection.query("SELECT id_cajon, estado_cita FROM registro_citas WHERE id = ?", [citaId]);
         
-        if (result.affectedRows === 0) {
+        if (citaActual.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: "Cita no encontrada" });
         }
 
+        const oldCajonId = citaActual[0].id_cajon;
+
+        // 4. Ejecutar la actualización de la cita
+        await connection.query(
+            `UPDATE registro_citas SET fecha_inicio = ?, fecha_fin = ?, hora_inicio = ?, hora_fin = ?, motivo = ?, estado_cita = ?, numero_invitados = ?, id_cajon = ? WHERE id = ?`,
+            [fecha_inicio, fecha_fin, hora_inicio, hora_fin, motivo, estado_cita, numInvitados, newCajonId, citaId]
+        );
+
+        // 5. Gestionar la lógica de los cajones
+        if (estado_cita === 'Cancelada') {
+            // Si deciden cancelar la cita, liberamos el cajón viejo
+            if (oldCajonId) {
+                await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [oldCajonId]);
+            }
+            // Por si acaso seleccionaron otro cajón al mismo tiempo que cancelaban
+            if (newCajonId !== oldCajonId) {
+                await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [newCajonId]);
+            }
+        } else {
+            // Si la cita sigue Confirmada o Pendiente
+            // A) Si cambiaron de cajón, liberamos el viejo
+            if (oldCajonId && oldCajonId !== newCajonId) {
+                await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [oldCajonId]);
+            }
+            // B) Ocupamos el nuevo cajón seleccionado
+            await connection.query("UPDATE cajones SET estado = 'Ocupado' WHERE id = ?", [newCajonId]);
+        }
+
+        // Si todo salió bien, guardamos los cambios
+        await connection.commit();
         res.status(200).json({ message: "Cita actualizada exitosamente" });
 
     } catch (error) {
+        // Si algo falla, revertimos todos los cambios
+        await connection.rollback();
         console.error("Error crítico en updateCitaById:", error);
         res.status(500).json({ message: "Error interno del servidor" });
     } finally {
@@ -220,9 +253,9 @@ export const deleteCitaById = async (req, res) => {
         await connection.query("DELETE FROM registro_citas WHERE id = ?", [id]);
 
         // 3. Poner el cajón en 'Disponible' nuevamente
-        // if (id_cajon_a_liberar) {
-        //     await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [id_cajon_a_liberar]);
-        // }
+        if (id_cajon_a_liberar) {
+            await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [id_cajon_a_liberar]);
+        }
 
         await connection.commit();
         res.status(200).json({ message: "Cita eliminada y cajón liberado" });
