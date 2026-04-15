@@ -1,6 +1,6 @@
 import { pool } from '../config/db.js';
 
-const FRONTEND_URL = 'http://localhost:5173/codigo'; //Para pruebas locales
+const FRONTEND_URL = 'https://ecoparking-api-prod.onrender.com/codigo'; //Para pruebas locales
 
 export const validarTokenQR = async (req, res) => {
     const connection = await pool.getConnection();

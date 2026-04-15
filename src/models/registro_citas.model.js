@@ -29,7 +29,7 @@ export const getRegistrosCitas = async (req, res) => {
 
             // Construir la URL de validación completa
             const url_validacion = qrToken
-                ? `http://localhost:4000/ecoparking/qr/validar/${qrToken}`
+                ? `https://ecoparking-api-prod.onrender.com/ecoparking/qr/validar/${qrToken}`
                 : null; // Si no tiene token, la URL es null
 
                 // Producción:
