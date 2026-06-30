@@ -214,14 +214,14 @@ export const getMisCitas = async (req, res) => {
             }
 
             const id_cajon_a_liberar = cita[0].id_cajon;
-
+            
             // 2. Borrar la cita
             await connection.query("DELETE FROM registro_citas WHERE id = ?", [id]);
 
-        // 3. Poner el cajón en 'Disponible' nuevamente
-        // if (id_cajon_a_liberar) {
-        //     await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [id_cajon_a_liberar]);
-        // }
+            // 3. Poner el cajón en 'Disponible' nuevamente
+            if (id_cajon_a_liberar) {
+                await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [id_cajon_a_liberar]);
+            }
 
             await connection.commit();
             res.status(200).json({ message: "Cita eliminada y cajón liberado" });

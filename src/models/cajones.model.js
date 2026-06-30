@@ -29,6 +29,32 @@ export async function createCajon(data) {
     }
     
 }
+
+// Editar un cajón
+export async function updateCajon(id, data) {
+    const { numero_cajon, estado } = data;
+    const connection = await pool.getConnection();
+    try {
+        const query = "UPDATE cajones SET numero_cajon = ?, estado = ? WHERE id = ?";
+        await connection.execute(query, [numero_cajon, estado, id]);
+        return true;
+    } finally {
+        connection.release();
+    }
+}
+
+// Eliminar un cajón
+export async function deleteCajon(id) {
+    const connection = await pool.getConnection();
+    try {
+        const query = "DELETE FROM cajones WHERE id = ?";
+        await connection.execute(query, [id]);
+        return true;
+    } finally {
+        connection.release();
+    }
+}
+
 // cajones.model.js
 export async function getCajonesDisponibles() {
     const connection = await pool.getConnection()

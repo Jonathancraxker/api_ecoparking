@@ -9,6 +9,25 @@ export async function crear(req, res) {
     const id = await Cajon.createCajon(req.body)
     res.json({ id })
 }
+
+export async function actualizar(req, res) {
+    try {
+        await Cajon.updateCajon(req.params.id, req.body);
+        res.json({ message: "Cajón actualizado" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al actualizar" });
+    }
+}
+
+export async function eliminar(req, res) {
+    try {
+        await Cajon.deleteCajon(req.params.id);
+        res.json({ message: "Cajón eliminado" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar" });
+    }
+}
+
 export async function listarDisponibles(req, res) {
     try {
         const data = await Cajon.getCajonesDisponibles()
