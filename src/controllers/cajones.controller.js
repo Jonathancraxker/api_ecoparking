@@ -6,8 +6,15 @@ export async function listar(req, res) {
 }
 
 export async function crear(req, res) {
-    const id = await Cajon.createCajon(req.body)
-    res.json({ id })
+    try {
+        const id = await Cajon.createCajon(req.body);
+        res.json({ id });
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ message: "El número de cajón ya existe, intenta con otro." });
+        }
+        res.status(500).json({ message: "Error interno al crear el cajón" });
+    }
 }
 
 export async function actualizar(req, res) {
