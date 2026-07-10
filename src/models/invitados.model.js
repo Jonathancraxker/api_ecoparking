@@ -22,7 +22,7 @@ export const getInvitadosId = async (req, res) => {
         const { id } = req.params; // se obtiene el id desde la URL
         console.log("ID recibido:", id);  // Esto imprimirá solo el id
 
-        const [rows] = await connection.query("SELECT id, nombre, correo, empresa, tipo_visitante, id_cita FROM invitados WHERE id = ?",  [id]);
+        const [rows] = await connection.query("SELECT id, nombre, correo, empresa, tipo_visitante, matricula, id_cita FROM invitados WHERE id = ?",  [id]);
         if (rows.length === 0) {
             return res.status(404).json({ message: "Invitado no encontrado" });
         }
@@ -63,14 +63,18 @@ export const getInvitadosPorCita = async (req, res) => {
 //Registrar un invitado y sumarlo en el numero de invitados +1 en la tabla registro_citas
 export const registrarInvitado = async (req, res) => {
     const connection = await pool.getConnection();
+    console.log("=== BODY RECIBIDO EN BACKEND ===");
+    console.log(req.body);  // ← VER EL BODY COMPLETO
+    console.log("matricula:", req.body.matricula);  // ← VER ESPECÍFICAMENTE
+    console.log("==================================");
     
     try {
-        const { nombre, correo, empresa, tipo_visitante, id_cita } = req.body;
+        const { nombre, correo, empresa, tipo_visitante, matricula, id_cita } = req.body;
         
         if (!nombre || !correo || !id_cita) {return res.status(400).json({ message: "Todos los campos son requeridos" });}
         await connection.beginTransaction();
-        const sqlInvitado = "INSERT INTO invitados (nombre, correo, empresa, tipo_visitante, id_cita) VALUES (?, ?, ?, ?, ?)";
-        const [result] = await connection.query(sqlInvitado, [nombre, correo, empresa, tipo_visitante, id_cita]);
+        const sqlInvitado = "INSERT INTO invitados (nombre, correo, empresa, tipo_visitante, matricula, id_cita) VALUES (?, ?, ?, ?, ?, ?)";
+        const [result] = await connection.query(sqlInvitado, [nombre, correo, empresa, tipo_visitante, matricula, id_cita]);
         
         // 2. Actualizamos el contador en la tabla de citas
         const sqlCita = "UPDATE registro_citas SET numero_invitados = numero_invitados + 1 WHERE id = ?";
@@ -96,11 +100,11 @@ export const updateInvitadoById = async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const { id } = req.params;
-        const { nombre, correo, empresa, tipo_visitante } = req.body;
+        const { nombre, correo, empresa, tipo_visitante, matricula } = req.body;
 
         const [result] = await connection.query(
-            "UPDATE invitados SET nombre = ?, correo = ?, empresa = ?, tipo_visitante = ? WHERE id = ?",
-            [nombre, correo, empresa, tipo_visitante, id]
+            "UPDATE invitados SET nombre = ?, correo = ?, empresa = ?, tipo_visitante = ?, matricula = ? WHERE id = ?",
+            [nombre, correo, empresa, tipo_visitante, matricula, id]
         );
 
         if (result.affectedRows === 0) {
