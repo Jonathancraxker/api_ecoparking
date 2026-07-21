@@ -100,18 +100,47 @@ export const updateInvitadoById = async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const { id } = req.params;
-        const { nombre, correo, empresa, tipo_visitante, matricula } = req.body;
+        // 🟢 1. Ahora sí extraemos el id_cajon
+        const { nombre, correo, empresa, tipo_visitante, matricula, id_cajon } = req.body;
 
-        const [result] = await connection.query(
-            "UPDATE invitados SET nombre = ?, correo = ?, empresa = ?, tipo_visitante = ?, matricula = ? WHERE id = ?",
-            [nombre, correo, empresa, tipo_visitante, matricula, id]
-        );
+        await connection.beginTransaction();
 
-        if (result.affectedRows === 0) {
+        // 🟢 2. Antes de actualizar, revisamos qué cajón tenía este invitado
+        const [oldGuest] = await connection.query("SELECT id_cajon FROM invitados WHERE id = ?", [id]);
+        if (oldGuest.length === 0) {
             return res.status(404).json({ message: "Invitado no encontrado" });
         }
+        const cajonViejo = oldGuest[0].id_cajon;
+        const cajonNuevo = id_cajon ? Number(id_cajon) : null;
+
+        // 🟢 3. Actualizamos todos los datos del invitado, INCLUYENDO id_cajon
+        const [result] = await connection.query(
+            "UPDATE invitados SET nombre = ?, correo = ?, empresa = ?, tipo_visitante = ?, matricula = ?, id_cajon = ? WHERE id = ?",
+            [nombre, correo, empresa, tipo_visitante, matricula, cajonNuevo, id]
+        );
+
+        // 🟢 4. Magia de Cajones: Si el cajón cambió, actualizamos los estados
+        if (cajonViejo !== cajonNuevo) {
+            // A) Ponemos el NUEVO cajón como Ocupado
+            if (cajonNuevo) {
+                await connection.query("UPDATE cajones SET estado = 'Ocupado' WHERE id = ?", [cajonNuevo]);
+            }
+            
+            // B) Revisamos si el cajón VIEJO se quedó vacío
+            if (cajonViejo) {
+                const [otrosInvitados] = await connection.query("SELECT id FROM invitados WHERE id_cajon = ?", [cajonViejo]);
+                // Si ya no hay nadie más usando ese cajón viejo, lo liberamos
+                if (otrosInvitados.length === 0) {
+                    await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [cajonViejo]);
+                }
+            }
+        }
+
+        await connection.commit();
         res.status(200).json({ message: "Invitado actualizado exitosamente" });
+
     } catch (error) {
+        await connection.rollback();
         console.error("Error al actualizar invitado:", error);
         res.status(500).json({ message: "Error interno del servidor" });
     } finally {
@@ -119,20 +148,20 @@ export const updateInvitadoById = async (req, res) => {
     }
 };
 
-//Eliminar un invitado y restar -1 en el numero de invitados de la tabla registro_citas
 export const deleteInvitadoById = async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const { id } = req.params;
         await connection.beginTransaction();
 
-        // 1. (Opcional pero recomendado) Necesitamos saber a qué cita pertenecía para restar el conteo
-        const [rows] = await connection.query("SELECT id_cita FROM invitados WHERE id = ?", [id]);
+        // 1. Necesitamos saber la cita y el CAJÓN que usaba antes de borrarlo
+        const [rows] = await connection.query("SELECT id_cita, id_cajon FROM invitados WHERE id = ?", [id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ message: "Invitado no encontrado" });
         }
         const id_cita = rows[0].id_cita;
+        const cajon_usado = rows[0].id_cajon;
 
         // 2. Eliminamos al invitado
         await connection.query("DELETE FROM invitados WHERE id = ?", [id]);
@@ -141,8 +170,18 @@ export const deleteInvitadoById = async (req, res) => {
         const sqlCita = "UPDATE registro_citas SET numero_invitados = numero_invitados - 1 WHERE id = ?";
         await connection.query(sqlCita, [id_cita]);
 
+        // 🟢 4. Magia de Cajones: Revisamos si era el último en usar ese cajón
+        if (cajon_usado) {
+            const [otrosInvitados] = await connection.query("SELECT id FROM invitados WHERE id_cajon = ?", [cajon_usado]);
+            // Si ya no hay nadie más usando ese cajón, lo liberamos
+            if (otrosInvitados.length === 0) {
+                await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [cajon_usado]);
+            }
+        }
+
         await connection.commit();
         res.status(200).json({ message: "Invitado eliminado exitosamente" });
+
     } catch (error) {
         await connection.rollback();
         console.error("Error al eliminar invitado:", error);

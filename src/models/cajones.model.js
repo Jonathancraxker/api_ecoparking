@@ -79,17 +79,20 @@ export async function getCajonesDisponiblesPorFechaHora(fecha_inicio, fecha_fin,
     const connection = await pool.getConnection();
     try {
         let subQuery = `
-            SELECT id_cajon FROM registro_citas 
-            WHERE id_cajon IS NOT NULL 
-            AND estado_cita != 'Cancelada'
-            AND CONCAT(fecha_fin, ' ', hora_fin) > CONCAT(?, ' ', ?)
-            AND CONCAT(fecha_inicio, ' ', hora_inicio) < CONCAT(?, ' ', ?)
+            SELECT i.id_cajon 
+            FROM invitados i
+            INNER JOIN registro_citas r ON i.id_cita = r.id
+            WHERE i.id_cajon IS NOT NULL 
+            AND r.estado_cita != 'Cancelada'
+            AND r.fecha_inicio = ?   
+            AND r.hora_inicio < ?    
+            AND r.hora_fin > ?       
         `;
         
-        const queryParams = [fecha_inicio, hora_inicio, fecha_fin, hora_fin];
+        const queryParams = [fecha_inicio, hora_fin, hora_inicio];
 
         if (id_cita_excluir) {
-            subQuery += ` AND id != ?`;
+            subQuery += ` AND r.id != ?`;
             queryParams.push(id_cita_excluir);
         }
 
