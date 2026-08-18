@@ -99,14 +99,14 @@ export const loginUsuario = async (req, res) => {
         
         // 1. CREAR EL ACCESS TOKEN (15 minutos)
         const accessToken = await accesoToken(
-            { id: user.id, tipo_usuario: user.tipo_usuario }, // Payload completo
+            { id: user.id, tipo_usuario: user.tipo_usuario, nombre: user.nombre }, // Payload completo
             ACCESS_TOKEN_SECRET, // Secreto de Access
             '15m' // Expiración CORTA
         );
 
         // 2. CREAR EL REFRESH TOKEN (7 días)
         const refreshToken = await accesoToken(
-            { id: user.id }, // Payload simple (solo el ID)
+            { id: user.id, nombre: user.nombre }, // Payload simple (solo el ID)
             REFRESH_TOKEN_SECRET, // Secreto de Refresh
             '30d'
         );
@@ -160,7 +160,7 @@ export const refreshToken = async (req, res) => {
 
         // 4. Si es válido, creamos un NUEVO Access Token (corta duración)
         const newAccessToken = await accesoToken(
-            { id: user.id, tipo_usuario: user.tipo_usuario },
+            { id: user.id, tipo_usuario: user.tipo_usuario, nombre: user.nombre }, // Payload completo
             ACCESS_TOKEN_SECRET,
             '15m' // 15 minutos
         );
@@ -221,7 +221,7 @@ export const logout = (req, res) => {
     // sameSite: 'none',
     expires: new Date(0),
 });
-    return res.sendStatus(200).json({message: "Sesión cerrada"});
+    return res.status(200).json({ message: "Sesión cerrada" });
 };
 
 export const profile = async (req, res) => {
