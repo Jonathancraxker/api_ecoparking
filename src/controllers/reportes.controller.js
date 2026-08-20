@@ -260,14 +260,11 @@ export const getEstadisticas = async (req, res) => {
     }
 };
 
-// --- CONTROLADOR 2: Predicción del Siguiente Mes (NO CAMBIA) ---
+// Predicción del Siguiente Mes
 export const getPrediccionSiguienteMes = async (req, res) => {
     try {
         
-        // --- ¡AQUÍ ESTÁ LA SIMULACIÓN! ---
-        // const hoy = new Date(); // <-- Versión de producción (fecha real)
-        const hoy = new Date('2025-11-15T12:00:00'); // <-- Versión de prueba
-        // --- FIN DEL CAMBIO ---
+        const hoy = new Date(); 
 
         const datosHistoricos = await getDatosHistoricosMensuales(hoy);
 
@@ -282,6 +279,7 @@ export const getPrediccionSiguienteMes = async (req, res) => {
         const { m, b } = ss.linearRegression(data);
         const proximo_x = data.length;
         const prediccion = (m * proximo_x) + b;
+        
         const proximoMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
         const nombreMes = proximoMes.toLocaleString('es-MX', { 
             month: 'long', 
