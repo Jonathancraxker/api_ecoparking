@@ -8,7 +8,7 @@ import { deleteCitaById, getCitasId, getMisCitas, getRegistrosCitas, registrarCi
 import { updateImagePerfil, updateUserById, updateUserByPassword } from "../models/profile.model.js"; //Perfil de usuario
 import { uploadImageProfile } from "../middlewares/uploadImagenProfile.js"; //Imagen de perfil
 import { isAdmin } from "../middlewares/isAdmin.js"; //validación de tipo de usuario
-import { deleteInvitadoById, getInvitadosPorCita, registrarInvitado, updateInvitadoById } from "../models/invitados.model.js";
+import { deleteInvitadoById, getInvitadosPorCita, registrarInvitado, updateInvitadoById, registrarEntradaInvitado, registrarSalidaInvitado } from "../models/invitados.model.js";
 
 const router = Router();
 
@@ -52,5 +52,7 @@ router.get('/citas/:id/invitados', authToken, getInvitadosPorCita); //Obtener in
 router.post('/invitados/', authToken, registrarInvitado); //Registrar nuevo invitado
 router.patch('/invitados/:id', updateInvitadoById); //actualizar invitado
 router.delete('/invitados/:id', deleteInvitadoById); //eliminar invitado
+router.patch('/invitados/:id/entrada', registrarEntradaInvitado); // Registrar entrada del invitado
+router.patch('/invitados/:id/salida', registrarSalidaInvitado); // Registrar salida del invitado y liberar cajón
 
 export default router;

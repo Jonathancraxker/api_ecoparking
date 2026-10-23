@@ -16,11 +16,10 @@ export const getRegistrosInvitados = async (req, res) => {
 export const getInvitadosId = async (req, res) => {
     const connection = await pool.getConnection();
     try {
-        // Verifica los parámetros que llegan en la solicitud
         console.log("Parametros recibidos:", req.params);
 
-        const { id } = req.params; // se obtiene el id desde la URL
-        console.log("ID recibido:", id);  // Esto imprimirá solo el id
+        const { id } = req.params;
+        console.log("ID recibido:", id);
 
         const [rows] = await connection.query("SELECT id, nombre, correo, empresa, tipo_visitante, matricula, id_cita FROM invitados WHERE id = ?",  [id]);
         if (rows.length === 0) {
@@ -35,20 +34,18 @@ export const getInvitadosId = async (req, res) => {
     }
 };
 
-// Obtiene todos los invitados de una cita específica
 export const getInvitadosPorCita = async (req, res) => {
     const connection = await pool.getConnection();
     try {
-        const { id } = req.params; // ID de la CITA
+        const { id } = req.params;
 
-        // Buscamos solo los invitados de esa cita
         const [rows] = await connection.query(
             "SELECT * FROM invitados WHERE id_cita = ?",
             [id]
         );
 
         if (rows.length === 0) {
-            return res.json([]); // Devuelve array vacío si no tiene
+            return res.json([]);
         }
         res.status(200).json(rows);
 
@@ -60,26 +57,34 @@ export const getInvitadosPorCita = async (req, res) => {
     }
 };
 
-//Registrar un invitado y sumarlo en el numero de invitados +1 en la tabla registro_citas
 export const registrarInvitado = async (req, res) => {
     const connection = await pool.getConnection();
-    console.log("=== BODY RECIBIDO EN BACKEND ===");
-    console.log(req.body);  // ← VER EL BODY COMPLETO
-    console.log("matricula:", req.body.matricula);  // ← VER ESPECÍFICAMENTE
-    console.log("==================================");
     
     try {
-        const { nombre, correo, empresa, tipo_visitante, matricula, id_cita } = req.body;
+        const { nombre, correo, empresa, tipo_visitante, matricula, id_cita, id_cajon, tipo_acompanante } = req.body;
         
         if (!nombre || !correo || !id_cita) {return res.status(400).json({ message: "Todos los campos son requeridos" });}
         await connection.beginTransaction();
-        const sqlInvitado = "INSERT INTO invitados (nombre, correo, empresa, tipo_visitante, matricula, id_cita) VALUES (?, ?, ?, ?, ?, ?)";
-        const [result] = await connection.query(sqlInvitado, [nombre, correo, empresa, tipo_visitante, matricula, id_cita]);
+
+        const sqlInvitado = "INSERT INTO invitados (nombre, correo, empresa, tipo_visitante, matricula, id_cajon, id_cita, tipo_acompanante) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        const [result] = await connection.query(sqlInvitado, [
+            nombre, 
+            correo, 
+            empresa, 
+            tipo_visitante, 
+            matricula, 
+            id_cajon || null, 
+            id_cita, 
+            tipo_acompanante || 'Conductor'
+        ]);
         
-        // 2. Actualizamos el contador en la tabla de citas
         const sqlCita = "UPDATE registro_citas SET numero_invitados = numero_invitados + 1 WHERE id = ?";
         await connection.query(sqlCita, [id_cita]);
-        // 3. Confirmamos la transacción
+
+        if (id_cajon) {
+            await connection.query("UPDATE cajones SET estado = 'Ocupado' WHERE id = ?", [id_cajon]);
+        }
+
         await connection.commit();
         res.status(201).json({
             message: "Invitado agregado exitosamente",
@@ -100,36 +105,49 @@ export const updateInvitadoById = async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const { id } = req.params;
-        // 🟢 1. Ahora sí extraemos el id_cajon
-        const { nombre, correo, empresa, tipo_visitante, matricula, id_cajon } = req.body;
+        const { nombre, correo, empresa, tipo_visitante, matricula, id_cajon, tipo_acompanante } = req.body;
 
         await connection.beginTransaction();
 
-        // 🟢 2. Antes de actualizar, revisamos qué cajón tenía este invitado
-        const [oldGuest] = await connection.query("SELECT id_cajon FROM invitados WHERE id = ?", [id]);
+        const [oldGuest] = await connection.query("SELECT id_cita, id_cajon, tipo_acompanante, matricula FROM invitados WHERE id = ?", [id]);
         if (oldGuest.length === 0) {
             return res.status(404).json({ message: "Invitado no encontrado" });
         }
-        const cajonViejo = oldGuest[0].id_cajon;
+        
+        const { 
+            id_cita, 
+            id_cajon: cajonViejo, 
+            tipo_acompanante: tipoViejo, 
+            matricula: matriculaVieja 
+        } = oldGuest[0];
+        
         const cajonNuevo = id_cajon ? Number(id_cajon) : null;
 
-        // 🟢 3. Actualizamos todos los datos del invitado, INCLUYENDO id_cajon
-        const [result] = await connection.query(
-            "UPDATE invitados SET nombre = ?, correo = ?, empresa = ?, tipo_visitante = ?, matricula = ?, id_cajon = ? WHERE id = ?",
-            [nombre, correo, empresa, tipo_visitante, matricula, cajonNuevo, id]
+        await connection.query(
+            "UPDATE invitados SET nombre = ?, correo = ?, empresa = ?, tipo_visitante = ?, matricula = ?, id_cajon = ?, tipo_acompanante = ? WHERE id = ?",
+            [nombre, correo, empresa, tipo_visitante, matricula, cajonNuevo, tipo_acompanante, id]
         );
 
-        // 🟢 4. Magia de Cajones: Si el cajón cambió, actualizamos los estados
+        if (tipoViejo === 'Conductor' || tipo_acompanante === 'Conductor') {
+            if (cajonViejo) {
+                await connection.query(
+                    "UPDATE invitados SET matricula = ?, id_cajon = ? WHERE id_cita = ? AND id_cajon = ? AND tipo_acompanante = 'Acompañante'",
+                    [matricula, cajonNuevo, id_cita, cajonViejo]
+                );
+            } else if (matriculaVieja) {
+                await connection.query(
+                    "UPDATE invitados SET matricula = ?, id_cajon = ? WHERE id_cita = ? AND matricula = ? AND tipo_acompanante = 'Acompañante'",
+                    [matricula, cajonNuevo, id_cita, matriculaVieja]
+                );
+            }
+        }
+
         if (cajonViejo !== cajonNuevo) {
-            // A) Ponemos el NUEVO cajón como Ocupado
             if (cajonNuevo) {
                 await connection.query("UPDATE cajones SET estado = 'Ocupado' WHERE id = ?", [cajonNuevo]);
             }
-            
-            // B) Revisamos si el cajón VIEJO se quedó vacío
             if (cajonViejo) {
                 const [otrosInvitados] = await connection.query("SELECT id FROM invitados WHERE id_cajon = ?", [cajonViejo]);
-                // Si ya no hay nadie más usando ese cajón viejo, lo liberamos
                 if (otrosInvitados.length === 0) {
                     await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [cajonViejo]);
                 }
@@ -137,7 +155,7 @@ export const updateInvitadoById = async (req, res) => {
         }
 
         await connection.commit();
-        res.status(200).json({ message: "Invitado actualizado exitosamente" });
+        res.status(200).json({ message: "Invitado y sus acompañantes actualizados exitosamente" });
 
     } catch (error) {
         await connection.rollback();
@@ -154,7 +172,6 @@ export const deleteInvitadoById = async (req, res) => {
         const { id } = req.params;
         await connection.beginTransaction();
 
-        // 1. Necesitamos saber la cita y el CAJÓN que usaba antes de borrarlo
         const [rows] = await connection.query("SELECT id_cita, id_cajon FROM invitados WHERE id = ?", [id]);
 
         if (rows.length === 0) {
@@ -163,17 +180,13 @@ export const deleteInvitadoById = async (req, res) => {
         const id_cita = rows[0].id_cita;
         const cajon_usado = rows[0].id_cajon;
 
-        // 2. Eliminamos al invitado
         await connection.query("DELETE FROM invitados WHERE id = ?", [id]);
         
-        // 3. Actualizamos el contador en la tabla de citas
         const sqlCita = "UPDATE registro_citas SET numero_invitados = numero_invitados - 1 WHERE id = ?";
         await connection.query(sqlCita, [id_cita]);
 
-        // 🟢 4. Magia de Cajones: Revisamos si era el último en usar ese cajón
         if (cajon_usado) {
             const [otrosInvitados] = await connection.query("SELECT id FROM invitados WHERE id_cajon = ?", [cajon_usado]);
-            // Si ya no hay nadie más usando ese cajón, lo liberamos
             if (otrosInvitados.length === 0) {
                 await connection.query("UPDATE cajones SET estado = 'Disponible' WHERE id = ?", [cajon_usado]);
             }
@@ -186,6 +199,109 @@ export const deleteInvitadoById = async (req, res) => {
         await connection.rollback();
         console.error("Error al eliminar invitado:", error);
         res.status(500).json({ message: "Error interno del servidor" });
+    } finally {
+        connection.release();
+    }
+};
+
+export const registrarEntradaInvitado = async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const { id } = req.params; 
+        await connection.beginTransaction();
+
+        const [invitadoDb] = await connection.query(
+            "SELECT id_cita, id_cajon FROM invitados WHERE id = ?",
+            [id]
+        );
+
+        if (invitadoDb.length === 0) {
+            return res.status(404).json({ message: "Invitado no encontrado" });
+        }
+
+        const { id_cita, id_cajon } = invitadoDb[0];
+
+        if (id_cajon) {
+            await connection.query(
+                "UPDATE invitados SET estado_visita = 'Dentro', hora_entrada = NOW() WHERE id_cita = ? AND id_cajon = ?",
+                [id_cita, id_cajon]
+            );
+
+            await connection.query(
+                "UPDATE cajones SET estado = 'Ocupado' WHERE id = ?",
+                [id_cajon]
+            );
+        } else {
+            await connection.query(
+                "UPDATE invitados SET estado_visita = 'Dentro', hora_entrada = NOW() WHERE id = ?",
+                [id]
+            );
+        }
+
+        await connection.commit();
+        res.status(200).json({ message: "Entrada registrada exitosamente para el vehículo y sus ocupantes." });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error("Error al registrar entrada:", error);
+        res.status(500).json({ message: "Error interno del servidor al procesar la entrada." });
+    } finally {
+        connection.release();
+    }
+};
+
+export const registrarSalidaInvitado = async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const { id } = req.params; 
+        await connection.beginTransaction();
+
+        const [invitadoDb] = await connection.query(
+            "SELECT id_cita, id_cajon FROM invitados WHERE id = ?",
+            [id]
+        );
+
+        if (invitadoDb.length === 0) {
+            return res.status(404).json({ message: "Invitado no encontrado" });
+        }
+
+        const { id_cita, id_cajon } = invitadoDb[0];
+
+        if (id_cajon) {
+            await connection.query(
+                "UPDATE invitados SET estado_visita = 'Finalizado', hora_salida = NOW() WHERE id_cita = ? AND id_cajon = ?",
+                [id_cita, id_cajon]
+            );
+            await connection.query(
+                "UPDATE cajones SET estado = 'Disponible' WHERE id = ?",
+                [id_cajon]
+            );
+        } else {
+            await connection.query(
+                "UPDATE invitados SET estado_visita = 'Finalizado', hora_salida = NOW() WHERE id = ?",
+                [id]
+            );
+        }
+
+        const [invitadosActivos] = await connection.query(
+            "SELECT id FROM invitados WHERE id_cita = ? AND estado_visita != 'Finalizado'",
+            [id_cita]
+        );
+
+        if (invitadosActivos.length === 0) {
+            await connection.query(
+                "UPDATE registro_citas SET estado_cita = 'Finalizada' WHERE id = ?",
+                [id_cita]
+            );
+        }
+
+        await connection.commit();
+        res.status(200).json({ message: "Salida registrada exitosamente." });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error("Error al registrar salida:", error);
+        res.status(500).json({ message: "Error interno del servidor al procesar la salida." });
     } finally {
         connection.release();
     }
