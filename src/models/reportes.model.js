@@ -1,11 +1,5 @@
-// Archivo: src/models/reportes.model.js
-// (Esta versión ya es correcta y no necesita cambios)
-
 import { pool } from '../config/db.js';
 
-/**
- * Obtiene TODOS los reportes (Para la tabla)
- */
 export async function getAllReportes() {
     const connection = await pool.getConnection();
     try {
@@ -33,13 +27,9 @@ export async function getAllReportes() {
     }
 }
 
-/**
- * CREA un nuevo reporte. La fecha se inserta AUTOMÁTICAMENTE.
- */
 export async function createReporte(idCita) {
     const connection = await pool.getConnection();
     try {
-        // La BD se encarga de la columna 'fecha' gracias al DEFAULT CURRENT_TIMESTAMP
         const query = "INSERT INTO reportes (id_cita) VALUES (?)";
         const [result] = await connection.execute(query, [idCita]);
         return result.insertId;
@@ -51,14 +41,10 @@ export async function createReporte(idCita) {
     }
 }
 
-/**
- * BUSCA si una cita ya fue reportada EL DÍA DE HOY.
- */
+
 export async function findReporteByCitaToday(idCita) {
     const connection = await pool.getConnection();
     try {
-        // CURDATE() obtiene la fecha actual (ej: 2025-11-13)
-        // DATE(fecha) extrae solo la parte de la fecha de la columna (ej: 2025-11-13 10:30:00 -> 2025-11-13)
         const query = "SELECT * FROM reportes WHERE id_cita = ? AND DATE(fecha) = CURDATE()";
         const [rows] = await connection.execute(query, [idCita]);
         return rows[0];
@@ -70,13 +56,10 @@ export async function findReporteByCitaToday(idCita) {
     }
 }
 
-/**
- * Obtiene UN SOLO reporte por su ID, con todos los datos.
- */
+
 export async function getReporteById(idReporte) {
     const connection = await pool.getConnection();
     try {
-        // Hacemos el mismo JOIN que en getAllReportes, pero filtrando por ID
         const query = `
           SELECT 
             r.id AS reporte_id,
@@ -92,7 +75,7 @@ export async function getReporteById(idReporte) {
           WHERE r.id = ?
         `;
         const [rows] = await connection.query(query, [idReporte]);
-        return rows[0]; // Devuelve solo el primer resultado (o undefined)
+        return rows[0];
     } catch (error) {
         console.error("Error en el modelo (getReporteById):", error);
         throw error;
@@ -101,12 +84,6 @@ export async function getReporteById(idReporte) {
     }
 }
 
-
-// --- ¡FUNCIONES DE ESTADÍSTICAS DE AFLUENCIA (LAS QUE QUEDAN) ---
-
-/**
- * Obtiene TODAS las fechas de inicio de citas CONFIRMADAS.
- */
 export async function getTodasFechasDeCitas() {
     const connection = await pool.getConnection();
     try {
@@ -121,9 +98,6 @@ export async function getTodasFechasDeCitas() {
     }
 }
 
-/**
- * Obtiene todas las horas_inicio de citas CONFIRMADAS.
- */
 export async function getHorasInicioCitas() {
     const connection = await pool.getConnection();
     try {
@@ -138,15 +112,9 @@ export async function getHorasInicioCitas() {
     }
 }
 
-// --- ¡NUEVAS FUNCIONES AÑADIDAS! ---
-
-/**
- * Obtiene las 5 divisiones que más citas CONFIRMADAS crean.
- */
 export async function getTopDivisiones() {
     const connection = await pool.getConnection();
     try {
-        // Unimos registro_citas (rc) con usuarios (u)
         const query = `
             SELECT u.division, COUNT(rc.id) AS cantidad
             FROM registro_citas rc
@@ -167,13 +135,9 @@ export async function getTopDivisiones() {
     }
 }
 
-/**
- * Obtiene las 5 empresas de invitados que más visitan (de citas CONFIRMADAS).
- */
 export async function getTopEmpresas() {
     const connection = await pool.getConnection();
     try {
-        // Unimos invitados (i) con registro_citas (rc)
         const query = `
             SELECT i.empresa, COUNT(i.id) AS cantidad
             FROM invitados i
@@ -194,13 +158,9 @@ export async function getTopEmpresas() {
     }
 }
 
-/**
- * Obtiene los 5 tipos de visitante más comunes (de citas CONFIRMADAS).
- */
 export async function getTopTipoVisitante() {
     const connection = await pool.getConnection();
     try {
-        // Unimos invitados (i) con registro_citas (rc)
         const query = `
             SELECT i.tipo_visitante, COUNT(i.id) AS cantidad
             FROM invitados i
@@ -221,14 +181,9 @@ export async function getTopTipoVisitante() {
     }
 }
 
-/**
- * Obtiene el conteo total de citas confirmadas por mes, ANTES de una fecha dada.
- * @param {Date} fechaHoy La fecha de "hoy" (real o simulada)
- */
 export async function getDatosHistoricosMensuales(fechaHoy) {
     const connection = await pool.getConnection(); 
     try {
-        // Usamos STR_TO_DATE para convertir tu VARCHAR en una fecha real
         const query = `
             SELECT 
                 YEAR(STR_TO_DATE(fecha_inicio, '%Y-%m-%d')) AS anio,

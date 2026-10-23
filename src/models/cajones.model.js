@@ -3,7 +3,12 @@ import { pool } from '../config/db.js'
 export async function getAllCajones() {
     const connection = await pool.getConnection()
     try {
-        const query = "SELECT * FROM cajones ORDER BY numero_cajon"
+        const query = `
+            SELECT c.*, u.nombre AS nombre_profesor, u.correo AS correo_profesor 
+            FROM cajones c 
+            LEFT JOIN usuarios u ON c.id_usuario = u.id 
+            ORDER BY c.numero_cajon
+        `;
         const [rows] = await connection.query(query)
         return rows
     } finally {
@@ -12,38 +17,47 @@ export async function getAllCajones() {
 }
 
 export async function createCajon(data) {
-    const { numero_cajon, estado } = data
+    let { numero_cajon, estado, zona, id_usuario } = data;
+    
+    if (zona !== 'Profesores' || !id_usuario) {
+        id_usuario = null;
+    }
+
     const connection = await pool.getConnection()
     try {
         const query = `
-            INSERT INTO cajones (numero_cajon, estado)
-            VALUES (?, ?)
+            INSERT INTO cajones (numero_cajon, estado, zona, id_usuario)
+            VALUES (?, ?, ?, ?)
         `
         const [result] = await connection.execute(query, [
             numero_cajon,
-            estado || 'Disponible'
+            estado || 'Disponible',
+            zona || 'Invitados',
+            id_usuario
         ])
         return result.insertId
     } finally {
         connection.release()
     }
-    
 }
 
-// Editar un cajón
 export async function updateCajon(id, data) {
-    const { numero_cajon, estado } = data;
+    let { numero_cajon, estado, zona, id_usuario } = data;
+    
+    if (zona !== 'Profesores' || !id_usuario) {
+        id_usuario = null;
+    }
+
     const connection = await pool.getConnection();
     try {
-        const query = "UPDATE cajones SET numero_cajon = ?, estado = ? WHERE id = ?";
-        await connection.execute(query, [numero_cajon, estado, id]);
+        const query = "UPDATE cajones SET numero_cajon = ?, estado = ?, zona = ?, id_usuario = ? WHERE id = ?";
+        await connection.execute(query, [numero_cajon, estado, zona, id_usuario, id]);
         return true;
     } finally {
         connection.release();
     }
 }
 
-// Eliminar un cajón
 export async function deleteCajon(id) {
     const connection = await pool.getConnection();
     try {
@@ -55,11 +69,9 @@ export async function deleteCajon(id) {
     }
 }
 
-// cajones.model.js
 export async function getCajonesDisponibles() {
     const connection = await pool.getConnection()
     try {
-        // Verifica si tu tabla se llama 'cajones' o 'Cajones' (MySQL es sensible a mayúsculas en Linux)
         const query = "SELECT * FROM cajones WHERE estado = 'Disponible'" 
         const [rows] = await connection.query(query)
         return rows
@@ -68,10 +80,8 @@ export async function getCajonesDisponibles() {
     }
 }
 
-// Función para cambiar el estado (se usará al registrar la cita)
 export async function actualizarEstadoCajon(id, estado, connection) {
     const query = "UPDATE cajones SET estado = ? WHERE id = ?"
-    // Usamos la conexión que viene por parámetro para mantener la transacción
     await connection.query(query, [estado, id])
 }
 
@@ -100,6 +110,7 @@ export async function getCajonesDisponiblesPorFechaHora(fecha_inicio, fecha_fin,
             SELECT * FROM cajones 
             WHERE estado != 'Mantenimiento' 
             AND id NOT IN (${subQuery})
+            ORDER BY zona, numero_cajon
         `;
         
         const [rows] = await connection.query(query, queryParams);

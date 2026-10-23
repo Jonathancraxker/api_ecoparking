@@ -1,7 +1,6 @@
 import { pool } from '../config/db.js'
 import bcrypt from 'bcryptjs';
 
-//Creacion de usuario en la base de datos
 export async function createUsuarios({
     nombre, correo, contrasena, codigo, tipo_usuario, telefono, division}) {
     const connection = await pool.getConnection();
@@ -78,11 +77,10 @@ export const getUsuarios = async (req, res) => {
 export const getUsersId = async (req, res) => {
     const connection = await pool.getConnection();
     try {
-        // Verifica los parámetros que llegan en la solicitud
         console.log("Parametros recibidos:", req.params);
 
-        const { id } = req.params; // se obtiene el id desde la URL
-        console.log("ID recibido:", id);  // Esto imprimirá solo el id
+        const { id } = req.params;
+        console.log("ID recibido:", id);
 
         const [rows] = await connection.query("SELECT id, nombre, correo, codigo, tipo_usuario, telefono, division FROM usuarios WHERE id = ?",  [id]);
         if (rows.length === 0) {
@@ -100,7 +98,7 @@ export const getUsersId = async (req, res) => {
 export const deleteUserById = async (req, res) => {
     const connection = await pool.getConnection();
     try {
-        const { id } = req.params; // Se obtiene el id desde la URL
+        const { id } = req.params;
         console.log("ID recibido:", id);
         const [result] = await connection.query("DELETE FROM usuarios WHERE id = ?", [id]);
         if (result.affectedRows === 0) {
@@ -118,7 +116,7 @@ export const updateUserByIdCRUD = async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const { id } = req.params;
-        const { nombre, correo, codigo, tipo_usuario, telefono, division, intentos } = req.body; // Se obtienen los datos a actualizar del cuerpo que manda el cliente
+        const { nombre, correo, codigo, tipo_usuario, telefono, division, intentos } = req.body;
 
         if (!nombre || !correo || !codigo || !tipo_usuario || !telefono || !division || !intentos) {
             return res.status(400).json({ message: "Por favor proporciona todos los campos necesarios" });

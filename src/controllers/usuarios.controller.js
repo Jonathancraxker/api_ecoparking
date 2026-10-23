@@ -101,7 +101,7 @@ export const loginUsuario = async (req, res) => {
         const accessToken = await accesoToken(
             { id: user.id, tipo_usuario: user.tipo_usuario, nombre: user.nombre }, // Payload completo
             ACCESS_TOKEN_SECRET, // Secreto de Access
-            '15m' // Expiración CORTA
+            '1d' // Expiración CORTA
         );
 
         // 2. CREAR EL REFRESH TOKEN (7 días)
@@ -162,7 +162,7 @@ export const refreshToken = async (req, res) => {
         const newAccessToken = await accesoToken(
             { id: user.id, tipo_usuario: user.tipo_usuario, nombre: user.nombre }, // Payload completo
             ACCESS_TOKEN_SECRET,
-            '15m' // 15 minutos
+            '1d' // 1 día
         );
 
         // 5. Enviamos el nuevo access token en el JSON
