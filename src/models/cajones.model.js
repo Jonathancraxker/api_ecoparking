@@ -19,7 +19,7 @@ export async function getAllCajones() {
 export async function createCajon(data) {
     let { numero_cajon, estado, zona, id_usuario } = data;
     
-    if (zona !== 'Profesores' || !id_usuario) {
+    if (!id_usuario || id_usuario === "") {
         id_usuario = null;
     }
 
@@ -44,7 +44,7 @@ export async function createCajon(data) {
 export async function updateCajon(id, data) {
     let { numero_cajon, estado, zona, id_usuario } = data;
     
-    if (zona !== 'Profesores' || !id_usuario) {
+    if (!id_usuario || id_usuario === "") {
         id_usuario = null;
     }
 
