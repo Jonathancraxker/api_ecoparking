@@ -30,9 +30,10 @@ export const getRegistrosCitas = async (req, res) => {
             const qrToken = qrRecord ? qrRecord.token : null;
 
             const url_validacion = qrToken
-                ? `https://ecoparking-api-prod.onrender.com/ecoparking/qr/validar/${qrToken}`
+                ? `http://localhost:4000/ecoparking/qr/validar/${qrToken}`
                 : null;
                 //`http://localhost:4000/ecoparking/qr/validar/${qrToken}`
+                //`https://ecoparking-api-prod.onrender.com/ecoparking/qr/validar/${qrToken}`
 
             return {
                 ...cita,
@@ -108,10 +109,11 @@ export const getMisCitas = async (req, res) => {
             return {
                 ...cita,
                 url_validacion: qrToken 
-                    ? `https://ecoparking-api-prod.onrender.com/ecoparking/qr/validar/${qrToken}`
+                    ? `http://localhost:4000/ecoparking/qr/validar/${qrToken}`
                     : null
 
                     // `http://localhost:4000/ecoparking/qr/validar/${qrToken}`
+                    // `https://ecoparking-api-prod.onrender.com/ecoparking/qr/validar/${qrToken}`
             };
         });
 
