@@ -87,7 +87,7 @@ export async function getReporteById(idReporte) {
 export async function getTodasFechasDeCitas() {
     const connection = await pool.getConnection();
     try {
-        const query = "SELECT fecha_inicio FROM registro_citas WHERE estado_cita = 'Confirmada'";
+        const query = "SELECT fecha_inicio FROM registro_citas WHERE estado_cita IN ('Confirmada', 'Finalizada')";
         const [rows] = await connection.query(query);
         return rows.map(r => new Date(r.fecha_inicio));
     } catch (error) {
@@ -101,7 +101,7 @@ export async function getTodasFechasDeCitas() {
 export async function getHorasInicioCitas() {
     const connection = await pool.getConnection();
     try {
-        const query = "SELECT hora_inicio FROM registro_citas WHERE estado_cita = 'Confirmada' AND hora_inicio IS NOT NULL AND hora_inicio != ''";
+        const query = "SELECT hora_inicio FROM registro_citas WHERE estado_cita IN ('Confirmada', 'Finalizada') AND hora_inicio IS NOT NULL AND hora_inicio != ''";
         const [rows] = await connection.query(query);
         return rows.map(r => r.hora_inicio);
     } catch (error) {
@@ -119,7 +119,7 @@ export async function getTopDivisiones() {
             SELECT u.division, COUNT(rc.id) AS cantidad
             FROM registro_citas rc
             JOIN usuarios u ON rc.id_usuario = u.id
-            WHERE rc.estado_cita = 'Confirmada'
+            WHERE rc.estado_cita IN ('Confirmada', 'Finalizada')
               AND u.division IS NOT NULL AND u.division != ''
             GROUP BY u.division
             ORDER BY cantidad DESC
@@ -142,7 +142,7 @@ export async function getTopEmpresas() {
             SELECT i.empresa, COUNT(i.id) AS cantidad
             FROM invitados i
             JOIN registro_citas rc ON i.id_cita = rc.id
-            WHERE rc.estado_cita = 'Confirmada'
+            WHERE rc.estado_cita IN ('Confirmada', 'Finalizada')
               AND i.empresa IS NOT NULL AND i.empresa != ''
             GROUP BY i.empresa
             ORDER BY cantidad DESC
@@ -165,7 +165,7 @@ export async function getTopTipoVisitante() {
             SELECT i.tipo_visitante, COUNT(i.id) AS cantidad
             FROM invitados i
             JOIN registro_citas rc ON i.id_cita = rc.id
-            WHERE rc.estado_cita = 'Confirmada'
+            WHERE rc.estado_cita IN ('Confirmada', 'Finalizada')
               AND i.tipo_visitante IS NOT NULL AND i.tipo_visitante != ''
             GROUP BY i.tipo_visitante
             ORDER BY cantidad DESC
@@ -191,7 +191,7 @@ export async function getDatosHistoricosMensuales(fechaHoy) {
                 COUNT(id) AS total_citas
             FROM registro_citas
             WHERE 
-                estado_cita = 'Confirmada' 
+                estado_cita IN ('Confirmada', 'Finalizada')
                 AND STR_TO_DATE(fecha_inicio, '%Y-%m-%d') < DATE_FORMAT(?, '%Y-%m-01') 
             GROUP BY 
                 anio, mes
